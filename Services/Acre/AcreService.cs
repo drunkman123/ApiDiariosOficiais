@@ -4,7 +4,7 @@ using ApiDiariosOficiais.Models.Requests.Acre;
 using HtmlAgilityPack;
 using System.Net.Http.Headers;
 
-namespace ApiDiariosOficiais.Services
+namespace ApiDiariosOficiais.Services.Acre
 {
     public class AcreService : IAcreService
     {
@@ -68,7 +68,7 @@ namespace ApiDiariosOficiais.Services
                 if (response.IsSuccessStatusCode)
                 {
                     // Handle success
-                    responseBody =  await response.Content.ReadAsStringAsync();
+                    responseBody = await response.Content.ReadAsStringAsync();
                 }
                 else
                 {

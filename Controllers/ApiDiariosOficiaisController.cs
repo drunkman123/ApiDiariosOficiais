@@ -11,12 +11,14 @@ namespace ApiDiariosOficiais.Controllers
     public class ApiDiariosOficiaisController : ControllerBase
     {
         private readonly IAcreService _apiAcreService;
+        private readonly IAlagoasService _apiAlagoasService;
         //private readonly ILogRepository _logRepository;
 
 
-        public ApiDiariosOficiaisController(IAcreService apiAcreService)
+        public ApiDiariosOficiaisController(IAcreService apiAcreService, IAlagoasService apiAlagoasService)
         {
             _apiAcreService = apiAcreService;
+            _apiAlagoasService = apiAlagoasService;
         }
 
         [HttpPost]
@@ -31,6 +33,14 @@ namespace ApiDiariosOficiais.Controllers
                 var acreResult = await _apiAcreService.GetAcreResponseAsync(acreRequestInicial);
                 if (acreResult != null) 
                     result.AcreResponse = acreResult;
+            }
+            //GetDiarioAlagoas
+            if (request.GetAlagoas)
+            {
+                var alagoasRequestInicial = request.ToApiAlagoasRequestInicialDomain();
+                var alagoasResult = await _apiAlagoasService.GetAlagoasResponseAsync(alagoasRequestInicial);
+                //if (alagoasResult != null)
+                    //result.AlagoasResponse = alagoasResult;
             }
 
             return result;

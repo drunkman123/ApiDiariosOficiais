@@ -1,6 +1,7 @@
 using ApiDiariosOficiais.Infrastructure.BrowserManager;
 using ApiDiariosOficiais.Interfaces;
 using ApiDiariosOficiais.Services;
+using ApiDiariosOficiais.Services.Acre;
 using ApiDiariosOficiais.Validation;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -14,8 +15,9 @@ builder.Services.AddFluentValidationAutoValidation(config =>
 });
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddControllers();
-builder.Services.AddSingleton<BrowserManager>();
+//builder.Services.AddSingleton<BrowserManager>();
 builder.Services.AddSingleton<IAcreService, AcreService>();
+builder.Services.AddSingleton<IAlagoasService, AlagoasService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

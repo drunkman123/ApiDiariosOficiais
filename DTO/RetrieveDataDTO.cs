@@ -6,6 +6,7 @@
         public DateTime InitialDate { get; init; }
         public DateTime EndDate { get; init; }
         public bool GetAcre { get; init; }
+        public bool GetAlagoas { get; init; }
         public int Page {  get; init; }
     }
 }
