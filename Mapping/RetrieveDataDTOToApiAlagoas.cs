@@ -9,8 +9,9 @@ namespace ApiDiariosOficiais.Mappings
         {
             return new ApiAlagoasRequestInicial
             {
-               keywords = retrieveDataRequest.TextToSearch,
-               range = [retrieveDataRequest.InitialDate.ToString("yyyy-MM-dd"), retrieveDataRequest.EndDate.ToString("yyyy-MM-dd")],               
+                Page = retrieveDataRequest.InitialPage ? 1 : retrieveDataRequest.Page,
+                keywords = retrieveDataRequest.TextToSearch,
+                range = [retrieveDataRequest.InitialDate.ToString("yyyy-MM-dd"), retrieveDataRequest.EndDate.ToString("yyyy-MM-dd")],
             };
         }
     }

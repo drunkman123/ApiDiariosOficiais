@@ -7,5 +7,6 @@
         public string order { get; set; } = "novo";
         public List<string> range { get; set; }
         public string searchType { get; set; } = "frase_exata";
+        public int Page { get; set; }
     }
 }

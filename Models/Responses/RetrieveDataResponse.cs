@@ -3,6 +3,6 @@
     public record RetrieveDataResponse
     {
         public ApiAcreResponse AcreResponse { get; set; }
-        //public ApiAlagoasResponse AlagoasResponse { get; set; }
+        public ApiAlagoasResponse AlagoasResponse { get; set; }
     }
 }

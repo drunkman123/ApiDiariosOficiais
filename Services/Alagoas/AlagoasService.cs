@@ -2,12 +2,9 @@
 using ApiDiariosOficiais.Models;
 using ApiDiariosOficiais.Models.Requests.Alagoas;
 using ApiDiariosOficiais.Models.Responses.Alagoas;
-using HtmlAgilityPack;
-using System.Net.Http;
-using System;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace ApiDiariosOficiais.Services
 {
@@ -32,18 +29,23 @@ namespace ApiDiariosOficiais.Services
             {
                 ApiAlagoasResponseInicial json = await GetDataAsync(requestInicial);
 
-                // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
+                if(json.result.items.Count > 0)
+                {
+                    result.Pages = (int)Math.Ceiling(json.result.total_rows.value / 15.0);//dividir o numero de resultados por 15 pois é o numero de resultados por pagina
+                    foreach (var items in json.result.items)
+                    {
+                        ResultadoAlagoas item = new();
+                        item.Text += "...";
+                        foreach(var highlights in items.highlight)
+                        {
+                            var sanitizedHighlights = SanitizeHighlights(highlights);
+                            item.Text += sanitizedHighlights + "...";
+                        }
+                        item.Link = $"https://diario.imprensaoficial.al.gov.br/apinova/api/editions/viewPdf/{items.edition_id}";
+                        result.Resultados.Add(item);
+                    }
 
-                //if (!string.IsNullOrEmpty(pageContent))
-                //{
-                //    var document = ParseHtml(pageContent);
-
-                //    //RemoveCalendarioDiv(document); //se nao remover a extração dos links buga
-
-                //    ExtractLinks(document, result);
-                //    ExtractTextFromTd(document, result);
-                //    ExtractLastPageNumber(document, result);
-                //}
+                }
             }
             catch (Exception ex)
             {
@@ -62,7 +64,7 @@ namespace ApiDiariosOficiais.Services
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
             try
             {
-                var response = await httpClient.PostAsync("apinova/api/editions/searchES?page=1", content);
+                var response = await httpClient.PostAsync($"apinova/api/editions/searchES?page={requestInicial.Page}", content);
                 response.EnsureSuccessStatusCode();
 
                 // Send the POST request
@@ -75,75 +77,20 @@ namespace ApiDiariosOficiais.Services
             catch (Exception ex) { }
             return responseObject;
 
-        }
+        }        
 
-        private HtmlDocument ParseHtml(string htmlContent)
+        private string SanitizeHighlights(string highlights)
         {
-            var document = new HtmlDocument();
-            document.LoadHtml(htmlContent);
-            return document;
-        }
+            string sanitizedString = Regex.Replace(highlights, "<.*?>", string.Empty);
 
-        private void RemoveCalendarioDiv(HtmlDocument document)
-        {
-            var calendarioDiv = document.DocumentNode.SelectSingleNode("//div[@id='calendario']");
-            calendarioDiv?.Remove();
-        }
+            // Step 2: Decode escape sequences (e.g., <\\/em> -> </em>)
+            sanitizedString = sanitizedString.Replace("\\/", "/");
 
-        private void ExtractLinks(HtmlDocument document, ApiAcreResponse result)
-        {
-            var links = document.DocumentNode.SelectNodes("//tbody//a");
+            // Step 3: Remove unwanted characters (like \n)
+            sanitizedString = sanitizedString.Replace("\n", " ").Replace("\r", " ");
 
-            if (links != null)
-            {
-                foreach (var link in links)
-                {
-                    result.Resultados.Add(new ResultadoAcre
-                    {
-                        Link = link.GetAttributeValue("href", string.Empty)
-                    });
-                }
-            }
-            else
-            {
-                Console.WriteLine("No <a> tags found inside <tbody>.");
-            }
-        }
-
-        private void ExtractTextFromTd(HtmlDocument document, ApiAcreResponse result)
-        {
-            var tdNodes = document.DocumentNode.SelectNodes("//td[@colspan='3']");
-
-            if (tdNodes != null && tdNodes.Count > 0)
-            {
-                for (int i = 0; i < result.Resultados.Count; i++)
-                {
-                    result.Resultados[i].Text = tdNodes[i].InnerText.Replace("\n", " ").Trim();
-                }
-            }
-            else
-            {
-                Console.WriteLine("No <td colspan='3'> elements found.");
-            }
-        }
-
-        private void ExtractLastPageNumber(HtmlDocument document, ApiAcreResponse result)
-        {
-            var lastPageNode = document.DocumentNode.SelectNodes("//span[contains(@onclick, 'vaiParaPaginaBusca')]")?.LastOrDefault();
-
-            if (lastPageNode != null)
-            {
-                var onclickValue = lastPageNode.GetAttributeValue("onclick", string.Empty);
-                var startIndex = onclickValue.IndexOf("(") + 1;
-                var endIndex = onclickValue.IndexOf(")");
-                var pageValue = onclickValue.Substring(startIndex, endIndex - startIndex);
-
-                result.Pages = Convert.ToInt32(pageValue);
-            }
-            else
-            {
-                Console.WriteLine("No 'vaiParaPaginaBusca' found.");
-            }
+            // Step 4: Normalize spaces (trim and collapse multiple spaces)
+            return Regex.Replace(sanitizedString, @"\s+", " ").Trim();
         }
     }
 }
