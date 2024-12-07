@@ -41,8 +41,9 @@ namespace ApiDiariosOficiais.Services.Acre
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
             }
+            result.Success = true;
 
             return result;
         }

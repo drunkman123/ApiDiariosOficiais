@@ -29,28 +29,30 @@ namespace ApiDiariosOficiais.Services
             {
                 ApiAlagoasResponseInicial json = await GetDataAsync(requestInicial);
 
-                if(json.result.items.Count > 0)
+                if (json.result.items.Count > 0)
                 {
                     result.Pages = (int)Math.Ceiling(json.result.total_rows.value / 15.0);//dividir o numero de resultados por 15 pois é o numero de resultados por pagina
                     foreach (var items in json.result.items)
                     {
                         ResultadoAlagoas item = new();
                         item.Text += "...";
-                        foreach(var highlights in items.highlight)
+                        foreach (var highlights in items.highlight)
                         {
                             var sanitizedHighlights = SanitizeHighlights(highlights);
                             item.Text += sanitizedHighlights + "...";
                         }
                         item.Link = $"https://diario.imprensaoficial.al.gov.br/apinova/api/editions/viewPdf/{items.edition_id}";
                         result.Resultados.Add(item);
+
                     }
 
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
             }
+            result.Success = true;
 
             return result;
         }
@@ -77,7 +79,7 @@ namespace ApiDiariosOficiais.Services
             catch (Exception ex) { }
             return responseObject;
 
-        }        
+        }
 
         private string SanitizeHighlights(string highlights)
         {

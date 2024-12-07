@@ -26,13 +26,14 @@ namespace ApiDiariosOficiais.Controllers
         [HttpPost]
         public async Task<RetrieveDataResponse> RetrieveData([FromBody] RetrieveDataDTO request)
         {
-            var results = new ConcurrentDictionary<string, object>();
+            var results = new Dictionary<string, object>();
 
             // Define region task mappings
             var regionTasks = new Dictionary<string, Func<Task>>
+            //var regionTasks = new ConcurrentDictionary<string, Func<Task>>
     {
-        { "Acre", async () => results["AcreResponse"] = await GetAcreResponseAsync(request) },
-        { "Alagoas", async () => results["AlagoasResponse"] = await GetAlagoasResponseAsync(request) },
+        { "Acre", async () => results["Acre"] = await GetAcreResponseAsync(request) },
+        { "Alagoas", async () => results["Alagoas"] = await GetAlagoasResponseAsync(request) },
         // Add new regions here
     };
 
@@ -47,62 +48,49 @@ namespace ApiDiariosOficiais.Controllers
             // Prepare the final response dynamically
             return new RetrieveDataResponse
             {
-                AcreResponse = results.TryGetValue("AcreResponse", out var acreResponse)
-                    ? acreResponse as ApiAcreResponse ?? new ApiAcreResponse { Resultados = new List<ResultadoAcre>() }
-                    : new ApiAcreResponse { Resultados = new List<ResultadoAcre>() },
+                Acre = results.TryGetValue("Acre", out var acreResponse)
+                ? (ApiAcreResponse)acreResponse
+                : new ApiAcreResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<ResultadoAcre>() },
 
-                AlagoasResponse = results.TryGetValue("AlagoasResponse", out var alagoasResponse)
-                    ? alagoasResponse as ApiAlagoasResponse ?? new ApiAlagoasResponse { Resultados = new List<ResultadoAlagoas>() }
-                    : new ApiAlagoasResponse { Resultados = new List<ResultadoAlagoas>() },
-
-                // Handle other regions dynamically if needed
+                Alagoas = results.TryGetValue("Alagoas", out var alagoasResponse)
+                ? (ApiAlagoasResponse)alagoasResponse
+                : new ApiAlagoasResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<ResultadoAlagoas>() }
             };
         }
-
         private bool ShouldExecuteTask(RetrieveDataDTO request, string regionKey)
         {
-            return regionKey switch
-            {
-                "Acre" => request.GetAcre,
-                "Alagoas" => request.GetAlagoas,
-                // Add conditions for new regions here
-                _ => false
-            };
+            return typeof(RetrieveDataDTO).GetProperty($"Get{regionKey}")?.GetValue(request) as bool? ?? false;
         }
-
-
-
         private async Task<ApiAcreResponse> GetAcreResponseAsync(RetrieveDataDTO request)
         {
-            var acreRequestInicial = request.ToApiAcreRequestInicialDomain();
             try
             {
+                var acreRequestInicial = request.ToApiAcreRequestInicialDomain();
+
                 var acreResult = await _apiAcreService.GetAcreResponseAsync(acreRequestInicial);
-                return acreResult ?? new ApiAcreResponse { Resultados = new List<ResultadoAcre>() };
+
+                return acreResult;
             }
             catch (Exception ex)
             {
-                // Log the error
-                //_logger.LogError(ex, "Error fetching Acre data");
-                return new ApiAcreResponse { Resultados = new List<ResultadoAcre>() };
+                return new ApiAcreResponse { Success = false, Error = ex.Message };
             }
-
         }
 
         private async Task<ApiAlagoasResponse> GetAlagoasResponseAsync(RetrieveDataDTO request)
         {
 
-            var alagoasRequestInicial = request.ToApiAlagoasRequestInicialDomain();
             try
             {
+                var alagoasRequestInicial = request.ToApiAlagoasRequestInicialDomain();
+
                 var alagoasResult = await _apiAlagoasService.GetAlagoasResponseAsync(alagoasRequestInicial);
-                return alagoasResult ?? new ApiAlagoasResponse { Resultados = new List<ResultadoAlagoas>() };
+
+                return alagoasResult;
             }
             catch (Exception ex)
             {
-                // Log the error
-                //_logger.LogError(ex, "Error fetching Acre data");
-                return new ApiAlagoasResponse { Resultados = new List<ResultadoAlagoas>() };
+                return new ApiAlagoasResponse { Success = false, Error = ex.Message };
             }
         }
 
