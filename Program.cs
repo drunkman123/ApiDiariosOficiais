@@ -5,6 +5,8 @@ using ApiDiariosOficiais.Services.Acre;
 using ApiDiariosOficiais.Validation;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,28 @@ builder.Services.AddControllers();
 //builder.Services.AddSingleton<BrowserManager>();
 builder.Services.AddSingleton<IAcreService, AcreService>();
 builder.Services.AddSingleton<IAlagoasService, AlagoasService>();
+
+// Enable rate limiting
+builder.Services.AddRateLimiter(options =>
+{
+    // Set a global limit
+    options.AddFixedWindowLimiter("global", config =>
+    {
+        config.PermitLimit = 20; // max 20 requests
+        config.Window = TimeSpan.FromSeconds(10); // per 10 seconds
+        config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        config.QueueLimit = 10; // max 10 requests in the queue
+    });
+
+    //// Set rate limiting per endpoint
+    //options.AddSlidingWindowLimiter("/api/acre", config =>
+    //{
+    //    config.PermitLimit = 50; // max 50 requests
+    //    config.Window = TimeSpan.FromMinutes(1); // per 1 minute
+    //    config.SegmentsPerWindow = 5; // segment the window
+    //    config.QueueLimit = 10; // max 10 requests in the queue
+    //});
+});
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -50,15 +74,17 @@ if (app.Environment.IsDevelopment())
 }
 app.UseMiddleware<ValidationExceptionMiddleware>();
 
+app.UseRateLimiter();
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.UseCors("AllowAll");
 
-app.MapControllers();
-app.Lifetime.ApplicationStopping.Register(() =>
-{
-    var browserManager = app.Services.GetRequiredService<BrowserManager>();
-    browserManager.Dispose();
-});
+app.MapControllers().RequireRateLimiting("global");
+//app.Lifetime.ApplicationStopping.Register(() =>
+//{
+//    var browserManager = app.Services.GetRequiredService<BrowserManager>();
+//    browserManager.Dispose();
+//});
 app.Run();

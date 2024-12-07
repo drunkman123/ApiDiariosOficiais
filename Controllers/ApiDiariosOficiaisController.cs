@@ -26,89 +26,84 @@ namespace ApiDiariosOficiais.Controllers
         [HttpPost]
         public async Task<RetrieveDataResponse> RetrieveData([FromBody] RetrieveDataDTO request)
         {
-            var result = new ConcurrentDictionary<string, object>();
+            var results = new ConcurrentDictionary<string, object>();
 
-            var tasks = new List<Task>();
+            // Define region task mappings
+            var regionTasks = new Dictionary<string, Func<Task>>
+    {
+        { "Acre", async () => results["AcreResponse"] = await GetAcreResponseAsync(request) },
+        { "Alagoas", async () => results["AlagoasResponse"] = await GetAlagoasResponseAsync(request) },
+        // Add new regions here
+    };
 
-            // Task for GetDiarioAcre
-            if (request.GetAcre)
-            {
-                tasks.Add(Task.Run(async () =>
-                {
-                    var acreResponse = await GetAcreResponseAsync(request);
-                    result["AcreResponse"] = acreResponse;
-                }));
-            }
+            // Select tasks based on the request
+            var tasks = regionTasks
+                .Where(rt => ShouldExecuteTask(request, rt.Key))
+                .Select(rt => rt.Value.Invoke());
 
-            // Task for GetDiarioAlagoas
-            if (request.GetAlagoas)
-            {
-                tasks.Add(Task.Run(async () =>
-                {
-                    var alagoasResponse = await GetAlagoasResponseAsync(request);
-                    result["AlagoasResponse"] = alagoasResponse;
-                }));
-            }
-
-            // Wait for all tasks to complete
+            // Execute all selected tasks
             await Task.WhenAll(tasks);
 
-            var finalResult = new RetrieveDataResponse();
-
-            // Retrieve responses from the dictionary
-            if (result.ContainsKey("AcreResponse"))
-                finalResult.AcreResponse = (ApiAcreResponse)result["AcreResponse"];
-            else
+            // Prepare the final response dynamically
+            return new RetrieveDataResponse
             {
-                finalResult.AcreResponse = new ApiAcreResponse();
-                finalResult.AcreResponse.Resultados = new List<ResultadoAcre>();
-            }
-                
-            if (result.ContainsKey("AlagoasResponse"))
-                finalResult.AlagoasResponse = (ApiAlagoasResponse)result["AlagoasResponse"];
-            else
-            {
-                finalResult.AlagoasResponse = new ApiAlagoasResponse();
-                finalResult.AlagoasResponse.Resultados = new List<ResultadoAlagoas>();
-            }
+                AcreResponse = results.TryGetValue("AcreResponse", out var acreResponse)
+                    ? acreResponse as ApiAcreResponse ?? new ApiAcreResponse { Resultados = new List<ResultadoAcre>() }
+                    : new ApiAcreResponse { Resultados = new List<ResultadoAcre>() },
 
-            return finalResult;
+                AlagoasResponse = results.TryGetValue("AlagoasResponse", out var alagoasResponse)
+                    ? alagoasResponse as ApiAlagoasResponse ?? new ApiAlagoasResponse { Resultados = new List<ResultadoAlagoas>() }
+                    : new ApiAlagoasResponse { Resultados = new List<ResultadoAlagoas>() },
+
+                // Handle other regions dynamically if needed
+            };
         }
+
+        private bool ShouldExecuteTask(RetrieveDataDTO request, string regionKey)
+        {
+            return regionKey switch
+            {
+                "Acre" => request.GetAcre,
+                "Alagoas" => request.GetAlagoas,
+                // Add conditions for new regions here
+                _ => false
+            };
+        }
+
+
 
         private async Task<ApiAcreResponse> GetAcreResponseAsync(RetrieveDataDTO request)
         {
-            var acreResponse = new ApiAcreResponse
-            {
-                Resultados = new List<ResultadoAcre>()
-            };
-
             var acreRequestInicial = request.ToApiAcreRequestInicialDomain();
-            var acreResult = await _apiAcreService.GetAcreResponseAsync(acreRequestInicial);
-
-            if (acreResult != null)
+            try
             {
-                acreResponse = acreResult;
+                var acreResult = await _apiAcreService.GetAcreResponseAsync(acreRequestInicial);
+                return acreResult ?? new ApiAcreResponse { Resultados = new List<ResultadoAcre>() };
+            }
+            catch (Exception ex)
+            {
+                // Log the error
+                //_logger.LogError(ex, "Error fetching Acre data");
+                return new ApiAcreResponse { Resultados = new List<ResultadoAcre>() };
             }
 
-            return acreResponse;
         }
 
         private async Task<ApiAlagoasResponse> GetAlagoasResponseAsync(RetrieveDataDTO request)
         {
-            var alagoasResponse = new ApiAlagoasResponse
-            {
-                Resultados = new List<ResultadoAlagoas>()
-            };
 
             var alagoasRequestInicial = request.ToApiAlagoasRequestInicialDomain();
-            var alagoasResult = await _apiAlagoasService.GetAlagoasResponseAsync(alagoasRequestInicial);
-
-            if (alagoasResult.Resultados.Count > 0)
+            try
             {
-                alagoasResponse = alagoasResult;
+                var alagoasResult = await _apiAlagoasService.GetAlagoasResponseAsync(alagoasRequestInicial);
+                return alagoasResult ?? new ApiAlagoasResponse { Resultados = new List<ResultadoAlagoas>() };
             }
-
-            return alagoasResponse;
+            catch (Exception ex)
+            {
+                // Log the error
+                //_logger.LogError(ex, "Error fetching Acre data");
+                return new ApiAlagoasResponse { Resultados = new List<ResultadoAlagoas>() };
+            }
         }
 
     }
