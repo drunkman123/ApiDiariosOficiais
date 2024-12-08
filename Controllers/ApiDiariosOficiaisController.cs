@@ -1,10 +1,9 @@
 using ApiDiariosOficiais.DTO;
+using ApiDiariosOficiais.Factory;
 using ApiDiariosOficiais.Interfaces;
-using ApiDiariosOficiais.Mappings;
 using ApiDiariosOficiais.Models;
 using ApiDiariosOficiais.Models.Responses;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Concurrent;
 
 namespace ApiDiariosOficiais.Controllers
 {
@@ -12,28 +11,27 @@ namespace ApiDiariosOficiais.Controllers
     [Route("api/[controller]/[action]")]
     public class ApiDiariosOficiaisController : ControllerBase
     {
-        private readonly IAcreService _apiAcreService;
-        private readonly IAlagoasService _apiAlagoasService;
+        private readonly GenericServiceFactory _serviceFactory;
+
         //private readonly ILogRepository _logRepository;
 
-
-        public ApiDiariosOficiaisController(IAcreService apiAcreService, IAlagoasService apiAlagoasService)
+        public ApiDiariosOficiaisController(GenericServiceFactory serviceFactory)
         {
-            _apiAcreService = apiAcreService;
-            _apiAlagoasService = apiAlagoasService;
+            _serviceFactory = serviceFactory;
         }
 
         [HttpPost]
         public async Task<RetrieveDataResponse> RetrieveData([FromBody] RetrieveDataDTO request)
         {
             var results = new Dictionary<string, object>();
-
             // Define region task mappings
             var regionTasks = new Dictionary<string, Func<Task>>
+
             //var regionTasks = new ConcurrentDictionary<string, Func<Task>>
     {
-        { "Acre", async () => results["Acre"] = await GetAcreResponseAsync(request) },
-        { "Alagoas", async () => results["Alagoas"] = await GetAlagoasResponseAsync(request) },
+        { "Acre", async () => results["Acre"] = await GetRegionResponseAsync<IAcreService>(request) },
+        { "Alagoas", async () => results["Alagoas"] = await GetRegionResponseAsync<IAlagoasService>(request) },
+        { "São Paulo", async () => results["São Paulo"] = await GetRegionResponseAsync<ISaoPauloService>(request) },
         // Add new regions here
     };
 
@@ -49,48 +47,31 @@ namespace ApiDiariosOficiais.Controllers
             return new RetrieveDataResponse
             {
                 Acre = results.TryGetValue("Acre", out var acreResponse)
-                ? (ApiAcreResponse)acreResponse
-                : new ApiAcreResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<ResultadoAcre>() },
+                ? (DiarioResponse)acreResponse
+                : new DiarioResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<Resultado>() },
 
                 Alagoas = results.TryGetValue("Alagoas", out var alagoasResponse)
-                ? (ApiAlagoasResponse)alagoasResponse
-                : new ApiAlagoasResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<ResultadoAlagoas>() }
+                ? (DiarioResponse)alagoasResponse
+                : new DiarioResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<Resultado>() }
             };
         }
         private bool ShouldExecuteTask(RetrieveDataDTO request, string regionKey)
         {
             return typeof(RetrieveDataDTO).GetProperty($"Get{regionKey}")?.GetValue(request) as bool? ?? false;
         }
-        private async Task<ApiAcreResponse> GetAcreResponseAsync(RetrieveDataDTO request)
+
+        private async Task<DiarioResponse> GetRegionResponseAsync<TService>(RetrieveDataDTO request)
+            where TService : IRegionService
         {
             try
             {
-                var acreRequestInicial = request.ToApiAcreRequestInicialDomain();
-
-                var acreResult = await _apiAcreService.GetAcreResponseAsync(acreRequestInicial);
-
-                return acreResult;
+                var regionService = _serviceFactory.Create<TService>();
+                var regionResult = await regionService.GetResponseAsync(request);
+                return regionResult;
             }
             catch (Exception ex)
             {
-                return new ApiAcreResponse { Success = false, Error = ex.Message };
-            }
-        }
-
-        private async Task<ApiAlagoasResponse> GetAlagoasResponseAsync(RetrieveDataDTO request)
-        {
-
-            try
-            {
-                var alagoasRequestInicial = request.ToApiAlagoasRequestInicialDomain();
-
-                var alagoasResult = await _apiAlagoasService.GetAlagoasResponseAsync(alagoasRequestInicial);
-
-                return alagoasResult;
-            }
-            catch (Exception ex)
-            {
-                return new ApiAlagoasResponse { Success = false, Error = ex.Message };
+                return new DiarioResponse { Success = false, Error = ex.Message };
             }
         }
 

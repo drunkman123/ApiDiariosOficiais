@@ -1,11 +1,6 @@
-﻿
-using ApiDiariosOficiais.Models;
-using ApiDiariosOficiais.Models.Requests.Alagoas;
-
-namespace ApiDiariosOficiais.Interfaces
+﻿namespace ApiDiariosOficiais.Interfaces
 {
-    public interface IAlagoasService
+    public interface IAlagoasService: IRegionService
     {
-        Task<ApiAlagoasResponse> GetAlagoasResponseAsync(ApiAlagoasRequestInicial requestInicial);
     }
 }

@@ -1,4 +1,6 @@
-﻿using ApiDiariosOficiais.Interfaces;
+﻿using ApiDiariosOficiais.DTO;
+using ApiDiariosOficiais.Interfaces;
+using ApiDiariosOficiais.Mappings;
 using ApiDiariosOficiais.Models;
 using ApiDiariosOficiais.Models.Requests.Acre;
 using HtmlAgilityPack;
@@ -16,16 +18,18 @@ namespace ApiDiariosOficiais.Services.Acre
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<ApiAcreResponse> GetAcreResponseAsync(ApiAcreRequestInicial requestInicial)
+        public async Task<DiarioResponse> GetResponseAsync(RetrieveDataDTO requestInicial)
         {
-            var result = new ApiAcreResponse
+            var acreRequestInicial = requestInicial.ToApiAcreRequestInicialDomain();
+
+            var result = new DiarioResponse
             {
-                Resultados = new List<ResultadoAcre>()
+                Resultados = new List<Resultado>()
             };
 
             try
             {
-                var pageContent = await SubmitSearchFormAsync(requestInicial);
+                var pageContent = await SubmitSearchFormAsync(acreRequestInicial);
 
 
                 if (!string.IsNullOrEmpty(pageContent))
@@ -96,7 +100,7 @@ namespace ApiDiariosOficiais.Services.Acre
             calendarioDiv?.Remove();
         }
 
-        private void ExtractLinks(HtmlDocument document, ApiAcreResponse result)
+        private void ExtractLinks(HtmlDocument document, DiarioResponse result)
         {
             var links = document.DocumentNode.SelectNodes("//tbody//a");
 
@@ -104,7 +108,7 @@ namespace ApiDiariosOficiais.Services.Acre
             {
                 foreach (var link in links)
                 {
-                    result.Resultados.Add(new ResultadoAcre
+                    result.Resultados.Add(new Resultado
                     {
                         Link = link.GetAttributeValue("href", string.Empty)
                     });
@@ -116,7 +120,7 @@ namespace ApiDiariosOficiais.Services.Acre
             }
         }
 
-        private void ExtractTextFromTd(HtmlDocument document, ApiAcreResponse result)
+        private void ExtractTextFromTd(HtmlDocument document, DiarioResponse result)
         {
             var tdNodes = document.DocumentNode.SelectNodes("//td[@colspan='3']");
 
@@ -133,7 +137,7 @@ namespace ApiDiariosOficiais.Services.Acre
             }
         }
 
-        private void ExtractLastPageNumber(HtmlDocument document, ApiAcreResponse result)
+        private void ExtractLastPageNumber(HtmlDocument document, DiarioResponse result)
         {
             var lastPageNode = document.DocumentNode.SelectNodes("//span[contains(@onclick, 'vaiParaPaginaBusca')]")?.LastOrDefault();
 

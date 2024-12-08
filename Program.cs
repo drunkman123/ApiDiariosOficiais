@@ -1,7 +1,7 @@
-using ApiDiariosOficiais.Infrastructure.BrowserManager;
+using ApiDiariosOficiais.Factory;
 using ApiDiariosOficiais.Interfaces;
-using ApiDiariosOficiais.Services;
 using ApiDiariosOficiais.Services.Acre;
+using ApiDiariosOficiais.Services.Alagoas;
 using ApiDiariosOficiais.Validation;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -18,8 +18,9 @@ builder.Services.AddFluentValidationAutoValidation(config =>
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddControllers();
 //builder.Services.AddSingleton<BrowserManager>();
-builder.Services.AddSingleton<IAcreService, AcreService>();
-builder.Services.AddSingleton<IAlagoasService, AlagoasService>();
+builder.Services.AddScoped<IAcreService, AcreService>();
+builder.Services.AddScoped<IAlagoasService, AlagoasService>();
+builder.Services.AddScoped<GenericServiceFactory>();
 
 // Enable rate limiting
 builder.Services.AddRateLimiter(options =>

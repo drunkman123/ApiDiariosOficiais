@@ -1,4 +1,6 @@
-﻿using ApiDiariosOficiais.Interfaces;
+﻿using ApiDiariosOficiais.DTO;
+using ApiDiariosOficiais.Interfaces;
+using ApiDiariosOficiais.Mappings;
 using ApiDiariosOficiais.Models;
 using ApiDiariosOficiais.Models.Requests.Alagoas;
 using ApiDiariosOficiais.Models.Responses.Alagoas;
@@ -6,7 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace ApiDiariosOficiais.Services
+namespace ApiDiariosOficiais.Services.Alagoas
 {
     public class AlagoasService : IAlagoasService
     {
@@ -18,23 +20,25 @@ namespace ApiDiariosOficiais.Services
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<ApiAlagoasResponse> GetAlagoasResponseAsync(ApiAlagoasRequestInicial requestInicial)
+        public async Task<DiarioResponse> GetResponseAsync(RetrieveDataDTO requestInicial)
         {
-            var result = new ApiAlagoasResponse
+            var alagoasRequestInicial = requestInicial.ToApiAlagoasRequestInicialDomain();
+
+            var result = new DiarioResponse
             {
-                Resultados = new List<ResultadoAlagoas>()
+                Resultados = new List<Resultado>()
             };
 
             try
             {
-                ApiAlagoasResponseInicial json = await GetDataAsync(requestInicial);
+                ApiAlagoasResponseInicial json = await GetDataAsync(alagoasRequestInicial);
 
                 if (json.result.items.Count > 0)
                 {
                     result.Pages = (int)Math.Ceiling(json.result.total_rows.value / 15.0);//dividir o numero de resultados por 15 pois é o numero de resultados por pagina
                     foreach (var items in json.result.items)
                     {
-                        ResultadoAlagoas item = new();
+                        Resultado item = new();
                         item.Text += "...";
                         foreach (var highlights in items.highlight)
                         {
