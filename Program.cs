@@ -6,6 +6,7 @@ using ApiDiariosOficiais.Validation;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.RateLimiting;
+using Polly;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,7 @@ builder.Services.AddFluentValidationAutoValidation(config =>
 {
     config.DisableDataAnnotationsValidation = true;
 });
+
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddControllers();
 //builder.Services.AddSingleton<BrowserManager>();
@@ -49,21 +51,6 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddHttpClient("ApiAcre", client =>
-{
-    client.BaseAddress = new Uri("https://diario.ac.gov.br/");
-});
-
-builder.Services.AddHttpClient("ApiAlagoas", client =>
-{
-    client.BaseAddress = new Uri("https://diario.imprensaoficial.al.gov.br/");
-});
-
-builder.Services.AddHttpClient("ApiSaoPaulo", client =>
-{
-    client.BaseAddress = new Uri("https://do-api-web-search.doe.sp.gov.br/v2/");
-});
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -73,6 +60,8 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader(); // Allows any header
     });
 });
+ConfigureHttpClients(builder.Services, builder.Configuration);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -97,3 +86,22 @@ app.MapControllers().RequireRateLimiting("global");
 //    browserManager.Dispose();
 //});
 app.Run();
+
+void ConfigureHttpClients(IServiceCollection services, IConfiguration configuration)
+{
+    // Retrieve API configurations from appsettings.json or other configuration sources
+    var apiConfigurations = configuration.GetSection("ApiConfigurations").GetChildren();
+
+    foreach (var apiConfig in apiConfigurations)
+    {
+        // Register each HTTP client using the 'Api' as the name and 'BaseAddress' as the address
+        var apiName = apiConfig["Api"];
+        var baseAddress = apiConfig["BaseAddress"];
+        services.AddHttpClient(apiName, client =>
+        {
+            client.BaseAddress = new Uri(baseAddress);
+        }).AddTransientHttpErrorPolicy(policyBuilder =>
+    policyBuilder.WaitAndRetryAsync(3, _ => TimeSpan.FromSeconds(3))
+);
+    }
+}
