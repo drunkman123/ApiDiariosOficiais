@@ -20,6 +20,7 @@ builder.Services.AddControllers();
 //builder.Services.AddSingleton<BrowserManager>();
 builder.Services.AddScoped<IAcreService, AcreService>();
 builder.Services.AddScoped<IAlagoasService, AlagoasService>();
+builder.Services.AddScoped<ISaoPauloService, SaoPauloService>();
 builder.Services.AddScoped<GenericServiceFactory>();
 
 // Enable rate limiting
@@ -52,10 +53,17 @@ builder.Services.AddHttpClient("ApiAcre", client =>
 {
     client.BaseAddress = new Uri("https://diario.ac.gov.br/");
 });
+
 builder.Services.AddHttpClient("ApiAlagoas", client =>
 {
     client.BaseAddress = new Uri("https://diario.imprensaoficial.al.gov.br/");
 });
+
+builder.Services.AddHttpClient("ApiSaoPaulo", client =>
+{
+    client.BaseAddress = new Uri("https://do-api-web-search.doe.sp.gov.br/v2/");
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>

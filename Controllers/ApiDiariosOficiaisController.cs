@@ -23,7 +23,7 @@ namespace ApiDiariosOficiais.Controllers
         [HttpPost]
         public async Task<RetrieveDataResponse> RetrieveData([FromBody] RetrieveDataDTO request)
         {
-            var results = new Dictionary<string, object>();
+            var results = new Dictionary<string, DiarioResponse>();
             // Define region task mappings
             var regionTasks = new Dictionary<string, Func<Task>>
 
@@ -31,7 +31,7 @@ namespace ApiDiariosOficiais.Controllers
     {
         { "Acre", async () => results["Acre"] = await GetRegionResponseAsync<IAcreService>(request) },
         { "Alagoas", async () => results["Alagoas"] = await GetRegionResponseAsync<IAlagoasService>(request) },
-        { "São Paulo", async () => results["São Paulo"] = await GetRegionResponseAsync<ISaoPauloService>(request) },
+        { "SaoPaulo", async () => results["SaoPaulo"] = await GetRegionResponseAsync<ISaoPauloService>(request) },
         // Add new regions here
     };
 
@@ -44,16 +44,8 @@ namespace ApiDiariosOficiais.Controllers
             await Task.WhenAll(tasks);
 
             // Prepare the final response dynamically
-            return new RetrieveDataResponse
-            {
-                Acre = results.TryGetValue("Acre", out var acreResponse)
-                ? (DiarioResponse)acreResponse
-                : new DiarioResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<Resultado>() },
+            return CreateDiarioResponse(results, "Acre", "Alagoas", "SaoPaulo");
 
-                Alagoas = results.TryGetValue("Alagoas", out var alagoasResponse)
-                ? (DiarioResponse)alagoasResponse
-                : new DiarioResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<Resultado>() }
-            };
         }
         private bool ShouldExecuteTask(RetrieveDataDTO request, string regionKey)
         {
@@ -74,6 +66,35 @@ namespace ApiDiariosOficiais.Controllers
                 return new DiarioResponse { Success = false, Error = ex.Message };
             }
         }
+        private RetrieveDataResponse CreateDiarioResponse(Dictionary<string, DiarioResponse> results, params string[] regionKeys)
+        {
+            var response = new RetrieveDataResponse();
 
+            foreach (var regionKey in regionKeys)
+            {
+                DiarioResponse regionResponse = results.TryGetValue(regionKey, out var responseValue)
+                    ? (DiarioResponse)responseValue
+                    : new DiarioResponse { Success = true, Error = "Api não requisitada.", Resultados = new List<Resultado>() };
+
+                switch (regionKey)
+                {
+                    case "Acre":
+                        response.Acre = regionResponse;
+                        break;
+                    case "Alagoas":
+                        response.Alagoas = regionResponse;
+                        break;
+                    case "SaoPaulo":
+                        response.SaoPaulo = regionResponse;
+                        break;
+                    // Add more cases for new regions here
+                    default:
+                        // Handle any unknown regions, if necessary
+                        break;
+                }
+            }
+
+            return response;
+        }
     }
 }
