@@ -38,9 +38,8 @@ namespace ApiDiariosOficiais.Services.Alagoas
                     foreach (var items in json.items)
                     {
                         Resultado item = new();
-                        item.Text += "Título: " + items.title + "  Texto:";
-                        item.Text += "..." + items.excerpt;
-                        
+                        item.Title = items.title;
+                        item.Text = "..." + items.excerpt + "...";                        
                         item.Link = $"https://doe.sp.gov.br/{items.slug}";
                         result.Resultados.Add(item);
 
