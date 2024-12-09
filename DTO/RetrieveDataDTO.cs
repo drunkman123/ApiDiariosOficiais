@@ -9,6 +9,7 @@
         public bool GetAlagoas { get; init; }
         public bool GetSaoPaulo { get; init; }
         public bool GetRioDeJaneiro { get; init; }
+        public bool GetAmapa { get; init; }
         public bool InitialPage {  get; init; }
         public int Page {  get; init; }
     }

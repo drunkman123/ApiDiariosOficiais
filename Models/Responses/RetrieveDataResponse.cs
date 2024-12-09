@@ -6,5 +6,6 @@
         public DiarioResponse Alagoas { get; set; }
         public DiarioResponse SaoPaulo { get; set; }
         public DiarioResponse RioDeJaneiro { get; set; }
+        public DiarioResponse Amapa { get; set; }
     }
 }

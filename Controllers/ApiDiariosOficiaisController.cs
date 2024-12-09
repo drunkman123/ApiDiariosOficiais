@@ -33,6 +33,7 @@ namespace ApiDiariosOficiais.Controllers
         { "Alagoas", async () => results["Alagoas"] = await GetRegionResponseAsync<IAlagoasService>(request) },
         { "SaoPaulo", async () => results["SaoPaulo"] = await GetRegionResponseAsync<ISaoPauloService>(request) },
         { "RioDeJaneiro", async () => results["RioDeJaneiro"] = await GetRegionResponseAsync<IRioDeJaneiroService>(request) },
+        { "Amapa", async () => results["Amapa"] = await GetRegionResponseAsync<IAmapaService>(request) },
         // Add new regions here
     };
 
@@ -45,10 +46,11 @@ namespace ApiDiariosOficiais.Controllers
             await Task.WhenAll(tasks);
 
             // Prepare the final response dynamically
-            return CreateDiarioResponse(results, "Acre", "Alagoas", "SaoPaulo","RioDeJaneiro");
+            return CreateDiarioResponse(results, "Acre", "Alagoas", "SaoPaulo","RioDeJaneiro","Amapa");
 
         }
-        private bool ShouldExecuteTask(RetrieveDataDTO request, string regionKey)
+
+        private static bool ShouldExecuteTask(RetrieveDataDTO request, string regionKey)
         {
             return typeof(RetrieveDataDTO).GetProperty($"Get{regionKey}")?.GetValue(request) as bool? ?? false;
         }
@@ -67,7 +69,7 @@ namespace ApiDiariosOficiais.Controllers
                 return new DiarioResponse { Success = false, Error = ex.Message };
             }
         }
-        private RetrieveDataResponse CreateDiarioResponse(Dictionary<string, DiarioResponse> results, params string[] regionKeys)
+        private static RetrieveDataResponse CreateDiarioResponse(Dictionary<string, DiarioResponse> results, params string[] regionKeys)
         {
             var response = new RetrieveDataResponse();
 
@@ -90,6 +92,9 @@ namespace ApiDiariosOficiais.Controllers
                         break;
                     case "RioDeJaneiro":
                         response.RioDeJaneiro = regionResponse;
+                        break; 
+                    case "Amapa":
+                        response.Amapa = regionResponse;
                         break;
                     // Add more cases for new regions here
                     default:

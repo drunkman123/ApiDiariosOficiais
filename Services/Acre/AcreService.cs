@@ -40,7 +40,7 @@ namespace ApiDiariosOficiais.Services.Acre
                     //RemoveCalendarioDiv(document); //se nao remover a extração dos links buga
 
                     ExtractLinks(document, result);
-                    if (result.Resultados.Count() > 0)
+                    if (result.Resultados.Count > 0)
                     {
 
                         ExtractTextFromTd(document, result);
