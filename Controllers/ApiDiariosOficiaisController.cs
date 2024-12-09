@@ -32,6 +32,7 @@ namespace ApiDiariosOficiais.Controllers
         { "Acre", async () => results["Acre"] = await GetRegionResponseAsync<IAcreService>(request) },
         { "Alagoas", async () => results["Alagoas"] = await GetRegionResponseAsync<IAlagoasService>(request) },
         { "SaoPaulo", async () => results["SaoPaulo"] = await GetRegionResponseAsync<ISaoPauloService>(request) },
+        { "RioDeJaneiro", async () => results["RioDeJaneiro"] = await GetRegionResponseAsync<IRioDeJaneiroService>(request) },
         // Add new regions here
     };
 
@@ -44,7 +45,7 @@ namespace ApiDiariosOficiais.Controllers
             await Task.WhenAll(tasks);
 
             // Prepare the final response dynamically
-            return CreateDiarioResponse(results, "Acre", "Alagoas", "SaoPaulo");
+            return CreateDiarioResponse(results, "Acre", "Alagoas", "SaoPaulo","RioDeJaneiro");
 
         }
         private bool ShouldExecuteTask(RetrieveDataDTO request, string regionKey)
@@ -86,6 +87,9 @@ namespace ApiDiariosOficiais.Controllers
                         break;
                     case "SaoPaulo":
                         response.SaoPaulo = regionResponse;
+                        break;
+                    case "RioDeJaneiro":
+                        response.RioDeJaneiro = regionResponse;
                         break;
                     // Add more cases for new regions here
                     default:

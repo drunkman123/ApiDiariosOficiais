@@ -10,7 +10,7 @@ namespace ApiDiariosOficiais.Mappings
             return new ApiSaoPauloRequestInicial
             {
                 PageNumber = retrieveDataRequest.InitialPage ? 1 : retrieveDataRequest.Page,
-                Terms = retrieveDataRequest.TextToSearch,
+                Terms = retrieveDataRequest.TextToSearch.Replace(" ","%20"),
                 FromDate = retrieveDataRequest.InitialDate.ToString("yyyy-MM-dd"),
                 ToDate = retrieveDataRequest.EndDate.ToString("yyyy-MM-dd")
             };

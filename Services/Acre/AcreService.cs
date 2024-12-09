@@ -5,6 +5,7 @@ using ApiDiariosOficiais.Models;
 using ApiDiariosOficiais.Models.Requests.Acre;
 using HtmlAgilityPack;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 
 namespace ApiDiariosOficiais.Services.Acre
 {
@@ -39,8 +40,14 @@ namespace ApiDiariosOficiais.Services.Acre
                     //RemoveCalendarioDiv(document); //se nao remover a extração dos links buga
 
                     ExtractLinks(document, result);
-                    ExtractTextFromTd(document, result);
-                    ExtractLastPageNumber(document, result);
+                    if (result.Resultados.Count() > 0)
+                    {
+
+                        ExtractTextFromTd(document, result);
+                        ExtractLastPageNumber(document, result);
+                        ExtractDates(document, result);
+                    }
+
                 }
             }
             catch (Exception ex)
@@ -94,12 +101,6 @@ namespace ApiDiariosOficiais.Services.Acre
             return document;
         }
 
-        private void RemoveCalendarioDiv(HtmlDocument document)
-        {
-            var calendarioDiv = document.DocumentNode.SelectSingleNode("//div[@id='calendario']");
-            calendarioDiv?.Remove();
-        }
-
         private void ExtractLinks(HtmlDocument document, DiarioResponse result)
         {
             var links = document.DocumentNode.SelectNodes("//tbody//a");
@@ -124,36 +125,47 @@ namespace ApiDiariosOficiais.Services.Acre
         {
             var tdNodes = document.DocumentNode.SelectNodes("//td[@colspan='3']");
 
-            if (tdNodes != null && tdNodes.Count > 0)
+            for (int i = 0; i < result.Resultados.Count; i++)
             {
-                for (int i = 0; i < result.Resultados.Count; i++)
-                {
-                    result.Resultados[i].Text = tdNodes[i].InnerText.Replace("\n", " ").Trim();
-                }
+                result.Resultados[i].Text = tdNodes[i].InnerText.Replace("\n", " ").Trim();
             }
-            else
-            {
-                Console.WriteLine("No <td colspan='3'> elements found.");
-            }
+
         }
 
         private void ExtractLastPageNumber(HtmlDocument document, DiarioResponse result)
         {
-            var lastPageNode = document.DocumentNode.SelectNodes("//span[contains(@onclick, 'vaiParaPaginaBusca')]")?.LastOrDefault();
+            var node = document.DocumentNode
+                                      .SelectSingleNode("//div[@class='resultados_busca']/p[2]");
 
-            if (lastPageNode != null)
+            string text = node.InnerText;
+            var number = new string(text.Where(char.IsDigit).ToArray());
+            if (number.Length > 0)
             {
-                var onclickValue = lastPageNode.GetAttributeValue("onclick", string.Empty);
-                var startIndex = onclickValue.IndexOf("(") + 1;
-                var endIndex = onclickValue.IndexOf(")");
-                var pageValue = onclickValue.Substring(startIndex, endIndex - startIndex);
+                result.Pages = (int)Math.Ceiling(Convert.ToInt32(number) / 10.0);
+            }
 
-                result.Pages = Convert.ToInt32(pageValue);
-            }
-            else
+        }
+
+        private void ExtractDates(HtmlDocument document, DiarioResponse result)
+        {
+            var datePattern = @"\b\d{2}/\d{2}/\d{4}\b";
+            var regex = new Regex(datePattern);
+            var dates = document.DocumentNode.SelectNodes("//td")
+                       .Select(node => node.InnerText.Trim())
+                       .Where(text => regex.IsMatch(text)) // Match only valid date formats
+                       .Select(text => regex.Match(text).Value).ToList(); // Extract the date
+
+            for (int i = 0; i < result.Resultados.Count; i++)
             {
-                Console.WriteLine("No 'vaiParaPaginaBusca' found.");
+                // Parse the string into a DateTime object with the specific format
+                DateTime date = DateTime.ParseExact(dates[i], "dd/MM/yyyy", null);
+
+                // Format the DateTime object as "yyyy-MM-dd"
+                string formattedDate = date.ToString("yyyy-MM-dd");
+
+                result.Resultados[i].Date = Convert.ToDateTime(formattedDate);
             }
+
         }
     }
 }

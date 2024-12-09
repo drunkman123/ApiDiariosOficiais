@@ -1,6 +1,6 @@
 ﻿namespace ApiDiariosOficiais.Models.Requests.SaoPaulo
 {
-    public class ApiSaoPauloRequestInicial
+    public record ApiSaoPauloRequestInicial
     {
         public int PageNumber { get; set; }
         public string Terms { get; set; }

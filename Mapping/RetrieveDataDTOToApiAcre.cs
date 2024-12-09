@@ -11,7 +11,7 @@ namespace ApiDiariosOficiais.Mappings
             {
                 AnoPalavra = retrieveDataRequest.InitialDate.Year.ToString(),
                 Palavra = retrieveDataRequest.TextToSearch,
-                PaginaIni = retrieveDataRequest.Page.ToString()
+                PaginaIni = (retrieveDataRequest.Page == 0 ? 0 : retrieveDataRequest.Page-1).ToString()
             };
         }
     }

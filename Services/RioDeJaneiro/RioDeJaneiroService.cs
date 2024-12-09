@@ -2,27 +2,27 @@
 using ApiDiariosOficiais.Interfaces;
 using ApiDiariosOficiais.Mappings;
 using ApiDiariosOficiais.Models;
-using ApiDiariosOficiais.Models.Requests.Alagoas;
-using ApiDiariosOficiais.Models.Responses.Alagoas;
+using ApiDiariosOficiais.Models.Requests.RioDeJaneiro;
+using ApiDiariosOficiais.Models.Responses.RioDeJaneiro;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace ApiDiariosOficiais.Services.Alagoas
+namespace ApiDiariosOficiais.Services.RioDeJaneiro
 {
-    public class AlagoasService : IAlagoasService
+    public class RioDeJaneiroService : IRioDeJaneiroService
     {
 
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public AlagoasService(IHttpClientFactory httpClientFactory)
+        public RioDeJaneiroService(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
         }
 
         public async Task<DiarioResponse> GetResponseAsync(RetrieveDataDTO requestInicial)
         {
-            var alagoasRequestInicial = requestInicial.ToApiAlagoasRequestInicialDomain();
+            var rioDeJaneiroRequestInicial = requestInicial.ToApiRioDeJaneiroRequestInicialDomain();
 
             var result = new DiarioResponse
             {
@@ -31,23 +31,23 @@ namespace ApiDiariosOficiais.Services.Alagoas
 
             try
             {
-                ApiAlagoasResponseInicial json = await GetDataAsync(alagoasRequestInicial);
+                ApiRioDeJaneiroResponseInicial json = await GetDataAsync(rioDeJaneiroRequestInicial);
 
-                if (json.result.items.Count > 0)
+                if (json.hits != null && json.hits.hits.Count > 0)
                 {
-                    result.Pages = (int)Math.Floor(json.result.total_rows.value / 15.0);//dividir o numero de resultados por 15 pois é o numero de resultados por pagina
-                    foreach (var items in json.result.items)
+                    result.Pages = (int)Math.Ceiling(json.hits.total / 10.0);//dividir o numero de resultados por 10 pois é o numero de resultados por pagina
+                    foreach (var items in json.hits.hits)
                     {
                         Resultado item = new();
                         item.Text += "...";
-                        foreach (var highlights in items.highlight)
+                        foreach (var highlights in items.highlight.conteudo)
                         {
                             var sanitizedHighlights = SanitizeHighlights(highlights);
                             item.Text += sanitizedHighlights + "...";
                         }
-                        item.Link = $"https://diario.imprensaoficial.al.gov.br/apinova/api/editions/viewPdf/{items.edition_id}";
+                        item.Link = $"https://doweb.rio.rj.gov.br/cleanpdf/?file=/apifront/portal/edicoes/pdf_diario/{items._source.diario_id}/{items._source.pagina}&find={rioDeJaneiroRequestInicial.SearchText}";
 
-                        DateTime date = DateTime.Parse(items.publication_date);
+                        DateTime date = DateTime.Parse(items._source.data);
 
                         item.Date = date;
 
@@ -66,21 +66,19 @@ namespace ApiDiariosOficiais.Services.Alagoas
             return result;
         }
 
-        private async Task<ApiAlagoasResponseInicial> GetDataAsync(ApiAlagoasRequestInicial requestInicial)
+        private async Task<ApiRioDeJaneiroResponseInicial> GetDataAsync(ApiRioDeJaneiroRequestInicial requestInicial)
         {
-            ApiAlagoasResponseInicial responseObject = new ApiAlagoasResponseInicial();
-            var httpClient = _httpClientFactory.CreateClient("ApiAlagoas");
-            var jsonPayload = JsonSerializer.Serialize(requestInicial);
+            ApiRioDeJaneiroResponseInicial responseObject = new ();
+            var httpClient = _httpClientFactory.CreateClient("ApiRioDeJaneiro");
 
-            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
             try
             {
-                var response = await httpClient.PostAsync($"apinova/api/editions/searchES?page={requestInicial.Page}", content);
+                var response = await httpClient.GetAsync($"busca/busca/buscar/query/{requestInicial.Page}/di:{requestInicial.InitialDate}/df:{requestInicial.FinalDate}/?1=1&q=%22{requestInicial.SearchText}%22");
                 response.EnsureSuccessStatusCode();
 
                 // Send the POST request
                 var responseString = await response.Content.ReadAsStringAsync();
-                responseObject = JsonSerializer.Deserialize<ApiAlagoasResponseInicial>(responseString, new JsonSerializerOptions
+                responseObject = JsonSerializer.Deserialize<ApiRioDeJaneiroResponseInicial>(responseString, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });

@@ -41,6 +41,7 @@ namespace ApiDiariosOficiais.Services.Alagoas
                         item.Title = items.title;
                         item.Text = "..." + items.excerpt + "...";                        
                         item.Link = $"https://doe.sp.gov.br/{items.slug}";
+                        item.Date = items.date;
                         result.Resultados.Add(item);
 
                     }
@@ -60,9 +61,6 @@ namespace ApiDiariosOficiais.Services.Alagoas
         {
             ApiSaoPauloResponseInicial responseObject = new();
             var httpClient = _httpClientFactory.CreateClient("ApiSaoPaulo");
-            var jsonPayload = JsonSerializer.Serialize(requestInicial);
-
-            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
             try
             {
                 var response = await httpClient.GetAsync($"advanced-search/publications?periodStartingDate=personalized&PageNumber={requestInicial.PageNumber}&Terms%5B0%5D={requestInicial.Terms}&FromDate={requestInicial.FromDate}&ToDate={requestInicial.ToDate}&PageSize=10&SortField=Date");
