@@ -4,6 +4,7 @@ using ApiDiariosOficiais.Services.Acre;
 using ApiDiariosOficiais.Services.Alagoas;
 using ApiDiariosOficiais.Services.Amapa;
 using ApiDiariosOficiais.Services.RioDeJaneiro;
+using ApiDiariosOficiais.Services.RioGrandeDoSul;
 using ApiDiariosOficiais.Validation;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -27,6 +28,7 @@ builder.Services.AddScoped<IAlagoasService, AlagoasService>();
 builder.Services.AddScoped<ISaoPauloService, SaoPauloService>();
 builder.Services.AddScoped<IRioDeJaneiroService, RioDeJaneiroService>();
 builder.Services.AddScoped<IAmapaService, AmapaService>();
+builder.Services.AddScoped<IRioGrandeDoSulService, RioGrandeDoSulService>();
 builder.Services.AddScoped<GenericServiceFactory>();
 
 // Enable rate limiting

@@ -4,7 +4,6 @@ using ApiDiariosOficiais.Mappings;
 using ApiDiariosOficiais.Models;
 using ApiDiariosOficiais.Models.Requests.Amapa;
 using ApiDiariosOficiais.Models.Responses.Amapa;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
