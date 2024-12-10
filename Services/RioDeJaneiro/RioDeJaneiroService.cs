@@ -68,7 +68,7 @@ namespace ApiDiariosOficiais.Services.RioDeJaneiro
 
         private async Task<ApiRioDeJaneiroResponseInicial> GetDataAsync(ApiRioDeJaneiroRequestInicial requestInicial)
         {
-            ApiRioDeJaneiroResponseInicial responseObject = new ();
+            ApiRioDeJaneiroResponseInicial responseObject = new();
             var httpClient = _httpClientFactory.CreateClient("ApiRioDeJaneiro");
 
             try
@@ -83,7 +83,10 @@ namespace ApiDiariosOficiais.Services.RioDeJaneiro
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex) { }
+            catch (Exception ex)
+            {
+                throw;
+            }
             return responseObject;
 
         }

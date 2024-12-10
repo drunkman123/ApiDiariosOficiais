@@ -89,7 +89,10 @@ namespace ApiDiariosOficiais.Services.Acre
                 }
 
             }
-            catch (Exception ex) { }
+            catch (Exception ex)
+            {
+                throw;
+            }
             return responseBody;
 
         }

@@ -67,7 +67,7 @@ namespace ApiDiariosOficiais.Services.Amapa
 
         private async Task<ApiAmapaResponseInicial> GetDataAsync(ApiAmapaRequestInicial requestInicial)
         {
-            ApiAmapaResponseInicial responseObject = new ();
+            ApiAmapaResponseInicial responseObject = new();
             var httpClient = _httpClientFactory.CreateClient("ApiAmapa");
 
             try
@@ -82,7 +82,10 @@ namespace ApiDiariosOficiais.Services.Amapa
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex) { }
+            catch (Exception ex)
+            {
+                throw;
+            }
             return responseObject;
 
         }

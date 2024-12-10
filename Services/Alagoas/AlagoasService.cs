@@ -85,7 +85,10 @@ namespace ApiDiariosOficiais.Services.Alagoas
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex) { }
+            catch (Exception ex)
+            {
+                throw;
+            }
             return responseObject;
 
         }

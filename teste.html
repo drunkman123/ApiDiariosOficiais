@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Call</title>
+    <style>
+#searchForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.checkbox-group {
+    display: flex;
+    gap: 15px; /* Space between the checkboxes */
+    align-items: center;
+}
+
+.checkbox-group label {
+    margin-right: 5px;
+}
+
+.checkbox-group input {
+    margin-right: 10px; /* Space after each checkbox */
+}
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .tab {
+            display: inline-block;
+            padding: 10px;
+            cursor: pointer;
+            margin-right: 5px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+        }
+        .tab.active {
+            background-color: #ddd;
+        }
+        .tab-content {
+            margin-top: 20px;
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .result {
+            margin-bottom: 20px;
+        }
+        .result a {
+            color: blue;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Search Results</h1>
+    <form id="searchForm">
+    <label for="textToSearch">Text to Search:</label><br>
+    <input type="text" id="textToSearch" value="vera lucia"><br><br>
+
+    <label for="initialDate">Initial Date:</label><br>
+    <input type="datetime-local" id="initialDate" value="2024-12-05T01:02"><br><br>
+
+    <label for="endDate">End Date:</label><br>
+    <input type="datetime-local" id="endDate" value="2024-12-05T01:02"><br><br>
+
+    <div class="checkbox-group">
+        <label for="getAcre">Get Acre:</label>
+        <input type="checkbox" id="getAcre" checked>
+
+        <label for="getAlagoas">Get Alagoas:</label>
+        <input type="checkbox" id="getAlagoas" checked>
+
+        <label for="getSaoPaulo">Get São Paulo:</label>
+        <input type="checkbox" id="getSaoPaulo" checked>
+
+        <label for="getRioDeJaneiro">Get Rio de Janeiro:</label>
+        <input type="checkbox" id="getRioDeJaneiro" checked>
+
+        <label for="getAmapa">Get Amapá:</label>
+        <input type="checkbox" id="getAmapa" checked>
+
+        <label for="getRioGrandeDoSul">Get Rio Grande do Sul:</label>
+        <input type="checkbox" id="getRioGrandeDoSul" checked>
+    <label for="page">Page:</label><br>
+    <input type="number" id="page" value="0" min="0"><br><br>
+
+    <label for="initialPage">Initial Page:</label><br>
+    <input type="checkbox" id="initialPage" checked><br><br>
+    </div>
+
+
+
+    <button type="submit">Search</button>
+</form>
+
+    <!-- Tab navigation -->
+    <div id="tabs">
+        <div class="tab active" data-tab="acre">Acre</div>
+        <div class="tab" data-tab="alagoas">Alagoas</div>
+        <div class="tab" data-tab="saoPaulo">São Paulo</div>
+        <div class="tab" data-tab="rioDeJaneiro">Rio de Janeiro</div>
+        <div class="tab" data-tab="amapa">Amapá</div>
+        <div class="tab" data-tab="rioGrandeDoSul">Rio Grande do Sul</div>
+    </div>
+
+    <!-- Tab content -->
+    <div id="results">
+        <div id="acre" class="tab-content"></div>
+        <div id="alagoas" class="tab-content"></div>
+        <div id="saoPaulo" class="tab-content"></div>
+        <div id="rioDeJaneiro" class="tab-content"></div>
+        <div id="amapa" class="tab-content"></div>
+        <div id="rioGrandeDoSul" class="tab-content"></div>
+    </div>
+
+<script>
+document.getElementById('searchForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    // Collect form data
+    const textToSearch = document.getElementById('textToSearch').value;
+    const initialDate = document.getElementById('initialDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const getAcre = document.getElementById('getAcre').checked;
+    const getAlagoas = document.getElementById('getAlagoas').checked;
+    const getSaoPaulo = document.getElementById('getSaoPaulo').checked;
+    const getRioDeJaneiro = document.getElementById('getRioDeJaneiro').checked;
+    const getAmapa = document.getElementById('getAmapa').checked;
+    const getRioGrandeDoSul = document.getElementById('getRioGrandeDoSul').checked;
+    const initialPage = document.getElementById('initialPage').checked;
+    const page = parseInt(document.getElementById('page').value, 10);
+
+    // Construct request payload
+    const payload = {
+        textToSearch,
+        initialDate,
+        endDate,
+        getAcre,
+        getAlagoas,
+        getSaoPaulo,
+        getRioDeJaneiro,
+        getAmapa,
+        getRioGrandeDoSul,
+        initialPage,
+        page
+    };
+
+    try {
+        // Make API call
+        const response = await fetch('https://localhost:7059/api/apidiariosoficiais/retrievedata', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Handle each region separately
+        const regions = ['acre', 'alagoas', 'saoPaulo', 'rioDeJaneiro', 'amapa', 'rioGrandeDoSul'];
+        regions.forEach(region => {
+            const regionData = data[region];
+            const regionDiv = document.getElementById(region);
+            const resultados = regionData.resultados || [];
+
+            // Clear previous results
+            regionDiv.innerHTML = '';
+
+            // Check if there are results or pages > 0
+            if (resultados.length > 0 || regionData.pages > 0) {
+                // Display results
+                resultados.forEach(result => {
+                    const resultDiv = document.createElement('div');
+                    resultDiv.classList.add('result');
+                    resultDiv.innerHTML = `
+                        <p><strong>Date:</strong> ${new Date(result.date).toLocaleString()}</p> <!-- Display date -->
+                        <a href="${result.link}" target="_blank">Download PDF</a>
+                        <p>${result.text}</p>
+                    `;
+                    regionDiv.appendChild(resultDiv);
+                });
+            } else {
+                regionDiv.innerHTML = '<p>No results found.</p>';
+            }
+        });
+
+        // Ensure there's always an active tab and content
+        const activeTab = document.querySelector('.tab.active');
+        const activeContent = document.querySelector('.tab-content.active');
+        if (activeTab && activeContent) {
+            activeTab.classList.remove('active');
+            activeContent.classList.remove('active');
+        }
+        
+        // Activate the first tab
+        const firstTab = document.querySelector('.tab');
+        if (firstTab) {
+            firstTab.classList.add('active');
+            document.getElementById(firstTab.getAttribute('data-tab')).classList.add('active');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('An error occurred. Please check the console for details.');
+    }
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const tabId = tab.getAttribute('data-tab');
+        
+        // Deactivate all tabs and contents
+        const activeTab = document.querySelector('.tab.active');
+        const activeContent = document.querySelector('.tab-content.active');
+        if (activeTab) activeTab.classList.remove('active');
+        if (activeContent) activeContent.classList.remove('active');
+        
+        // Activate selected tab and content
+        tab.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    });
+});
+
+</script>
+
+
+
+</body>
+</html>

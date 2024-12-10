@@ -39,7 +39,7 @@ namespace ApiDiariosOficiais.Services.Alagoas
                     {
                         Resultado item = new();
                         item.Title = items.title;
-                        item.Text = "..." + items.excerpt + "...";                        
+                        item.Text = "..." + items.excerpt + "...";
                         item.Link = $"https://doe.sp.gov.br/{items.slug}";
                         item.Date = items.date;
                         result.Resultados.Add(item);
@@ -73,7 +73,10 @@ namespace ApiDiariosOficiais.Services.Alagoas
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex) { throw; }
+            catch (Exception ex)
+            {
+                throw;
+            }
             return responseObject;
 
         }

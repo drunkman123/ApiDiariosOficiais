@@ -90,7 +90,10 @@ namespace ApiDiariosOficiais.Services.RioGrandeDoSul
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex) { }
+            catch (Exception ex)
+            {
+                throw;
+            }
             return responseObject;
 
         }
