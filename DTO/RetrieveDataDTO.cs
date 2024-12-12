@@ -11,6 +11,7 @@
         public bool GetRioDeJaneiro { get; init; }
         public bool GetAmapa { get; init; }
         public bool GetRioGrandeDoSul { get; init; }
+        public bool GetMinasGerais { get; init; }
         public bool InitialPage {  get; init; }
         public int Page {  get; init; }
     }

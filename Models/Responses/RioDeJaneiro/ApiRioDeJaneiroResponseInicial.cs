@@ -1,38 +1,38 @@
 ﻿namespace ApiDiariosOficiais.Models.Responses.RioDeJaneiro
 {
-    public class Aggregations
+    public record Aggregations
     {
         public TipoEdicao TipoEdicao { get; set; }
         public Edicoes Edicoes { get; set; }
         public FileYear FileYear { get; set; }
     }
 
-    public class Bucket
+    public record Bucket
     {
         public int key { get; set; }
         public int doc_count { get; set; }
     }
 
-    public class Edicoes
+    public record Edicoes
     {
         public int doc_count_error_upper_bound { get; set; }
         public int sum_other_doc_count { get; set; }
         public List<Bucket> buckets { get; set; }
     }
 
-    public class FileYear
+    public record FileYear
     {
         public int doc_count_error_upper_bound { get; set; }
         public int sum_other_doc_count { get; set; }
         public List<Bucket> buckets { get; set; }
     }
 
-    public class Highlight
+    public record Highlight
     {
         public List<string> conteudo { get; set; }
     }
 
-    public class Hit
+    public record Hit
     {
         public string _index { get; set; }
         public string _type { get; set; }
@@ -48,7 +48,7 @@
         public List<Hit> hits { get; set; }
     }
 
-    public class ApiRioDeJaneiroResponseInicial
+    public record ApiRioDeJaneiroResponseInicial
     {
         public int took { get; set; }
         public bool timed_out { get; set; }
@@ -58,7 +58,7 @@
         public bool loggedCredit { get; set; }
     }
 
-    public class Shards
+    public record Shards
     {
         public int total { get; set; }
         public int successful { get; set; }
@@ -66,7 +66,7 @@
         public int failed { get; set; }
     }
 
-    public class Source
+    public record Source
     {
         public string conteudo { get; set; }
         public string data { get; set; }
@@ -80,7 +80,7 @@
         public string tipo_edicao { get; set; }
     }
 
-    public class TipoEdicao
+    public record TipoEdicao
     {
         public int doc_count_error_upper_bound { get; set; }
         public int sum_other_doc_count { get; set; }

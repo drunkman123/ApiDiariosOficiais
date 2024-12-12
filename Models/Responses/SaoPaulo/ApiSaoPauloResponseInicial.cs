@@ -1,6 +1,6 @@
 ﻿namespace ApiDiariosOficiais.Models.Responses.SaoPaulo
 {
-    public class ApiSaoPauloResponseInicial
+    public record ApiSaoPauloResponseInicial
     {
         public List<Item> items { get; set; }
         public int currentPage { get; set; }
@@ -9,7 +9,7 @@
         public int pageSize { get; set; }
         public bool hasPreviousPage { get; set; }
         public bool hasNextPage { get; set; }
-        public class Item
+        public record Item
         {
             public bool isLegacy { get; set; }
             public string id { get; set; }
@@ -25,7 +25,7 @@
             public List<TermsFound> termsFound { get; set; }
         }
 
-        public class TermsFound
+        public record TermsFound
         {
             public string term { get; set; }
             public int matchesFound { get; set; }

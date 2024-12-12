@@ -3,14 +3,14 @@
 namespace ApiDiariosOficiais.Models.Responses.RioGrandeDoSul
 {
 
-    public class Collection
+    public record Collection
     {
         public string origem { get; set; }
         public object corag { get; set; }
         public Procergs procergs { get; set; }
     }
 
-    public class Procergs
+    public record Procergs
     {
         private string _data;
 
@@ -35,7 +35,7 @@ namespace ApiDiariosOficiais.Models.Responses.RioGrandeDoSul
         public string conteudo { get; set; }
     }
 
-    public class ApiRioGrandeDoSulResponseInicial
+    public record ApiRioGrandeDoSulResponseInicial
     {
         public List<Collection> collection { get; set; }
         public int collectionSize { get; set; }

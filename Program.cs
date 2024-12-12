@@ -3,6 +3,7 @@ using ApiDiariosOficiais.Interfaces;
 using ApiDiariosOficiais.Services.Acre;
 using ApiDiariosOficiais.Services.Alagoas;
 using ApiDiariosOficiais.Services.Amapa;
+using ApiDiariosOficiais.Services.MinasGerais;
 using ApiDiariosOficiais.Services.RioDeJaneiro;
 using ApiDiariosOficiais.Services.RioGrandeDoSul;
 using ApiDiariosOficiais.Validation;
@@ -29,6 +30,7 @@ builder.Services.AddScoped<ISaoPauloService, SaoPauloService>();
 builder.Services.AddScoped<IRioDeJaneiroService, RioDeJaneiroService>();
 builder.Services.AddScoped<IAmapaService, AmapaService>();
 builder.Services.AddScoped<IRioGrandeDoSulService, RioGrandeDoSulService>();
+builder.Services.AddScoped<IMinasGeraisService, MinasGeraisService>();
 builder.Services.AddScoped<GenericServiceFactory>();
 
 // Enable rate limiting
