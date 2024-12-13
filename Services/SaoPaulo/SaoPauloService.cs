@@ -98,12 +98,11 @@ namespace ApiDiariosOficiais.Services.Alagoas
                 document.LoadHtml(responseString);
                 var anchors = document.DocumentNode
                             .SelectNodes("//div[contains(@class, 'resultadoBuscaItem')]//a");
-                var pageNumberNode = document.DocumentNode.SelectSingleNode("//span[@id='content_lblDocumentosEncontrados']");
-                string numberText = pageNumberNode.InnerText.Trim();
-
 
                 if (anchors != null)
                 {
+                    var pageNumberNode = document.DocumentNode.SelectSingleNode("//span[@id='content_lblDocumentosEncontrados']");
+                    string numberText = pageNumberNode.InnerText.Trim();
                     result.Pages = (int)Math.Ceiling(Convert.ToInt32(numberText)/15.0);
                     for (int i = 0; i < anchors.Count; i += 3)
                     {

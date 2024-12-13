@@ -42,7 +42,7 @@ namespace ApiDiariosOficiais.Validation
                 .NotNull().WithMessage("GetSaoPaulo é obrigatório.");
 
             RuleFor(x => x.GetMinasGerais)
-                .NotNull().WithMessage("GetSaoPaulo é obrigatório.");
+                .NotNull().WithMessage("GetMinasGerais é obrigatório.");
 
             RuleFor(x => x.InitialPage)
                 .NotNull().WithMessage("InitialPage é obrigatório.");

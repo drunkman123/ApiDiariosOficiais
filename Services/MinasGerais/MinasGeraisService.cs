@@ -34,29 +34,21 @@ namespace ApiDiariosOficiais.Services.MinasGerais
             {
                 List<ApiMinasGeraisResponseInicial> json = await GetDataAsync(minasGeraisRequestInicial);
 
-                //if (json.hits != null && json.hits.hits.Count > 0)
-                //{
-                //    result.Pages = (int)Math.Ceiling(json.hits.total / 10.0);//dividir o numero de resultados por 10 pois é o numero de resultados por pagina
-                //    foreach (var items in json.hits.hits)
-                //    {
-                //        Resultado item = new();
-                //        item.Text += "...";
-                //        foreach (var highlights in items.highlight.conteudo)
-                //        {
-                //            var sanitizedHighlights = SanitizeHighlights(highlights);
-                //            item.Text += sanitizedHighlights + "...";
-                //        }
-                //        item.Link = $"https://doweb.rio.rj.gov.br/cleanpdf/?file=/apifront/portal/edicoes/pdf_diario/{items._source.diario_id}/{items._source.pagina}&find={MinasGeraisRequestInicial.SearchText}";
-
-                //        DateTime date = DateTime.Parse(items._source.data);
-
-                //        item.Date = date;
-
-                //        result.Resultados.Add(item);
-
-                //    }
-
-                //}
+                if (json.Count > 0)
+                {
+                    result.Pages = (int)Math.Ceiling(json.Count / 10.0);//esse resultado deverá ser a quantidade de paginas para o front pagina direto
+                    foreach (var items in json)
+                    {
+                        Resultado item = new();
+                        item.Text = "";
+                        item.Title = $@"Página {items.Pagina} - Caderno {items.Descricao.Trim()}";
+                        DateTime date = DateTime.Parse(items.DataPublicacao);
+                        item.Link = $"https://www.jornalminasgerais.mg.gov.br/modulos/www.jornalminasgerais.mg.gov.br//diarioOficial/{date.Year}/{date.Month}/{date.Day}/jornal/{items.Titulo.Trim()}_{items.DataPublicacao.Split(" ")[0]}.pdf";
+                        item.Date = date;
+                        result.Resultados.Add(item);
+                    }
+                }
+                result.Resultados = result.Resultados.OrderByDescending(x => x.Date).ToList();
             }
             catch (Exception ex)
             {

@@ -44,7 +44,7 @@
         public string diario { get; set; }
         public string suplemento { get; set; }
         public int total { get; set; }
-        public double max_score { get; set; }
+        public double? max_score { get; set; } = 0;
         public List<Hit> hits { get; set; }
     }
 
