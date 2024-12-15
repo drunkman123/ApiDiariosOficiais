@@ -56,7 +56,7 @@ namespace ApiDiariosOficiais.Services.Amapa
 
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -82,7 +82,7 @@ namespace ApiDiariosOficiais.Services.Amapa
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

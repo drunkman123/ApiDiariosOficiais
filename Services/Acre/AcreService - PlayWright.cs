@@ -48,7 +48,7 @@
 //                    ExtractLastPageNumber(document, result);
 //                }
 //            }
-//            catch (Exception ex)
+//            catch (Exception)
 //            {
 //                Console.WriteLine($"An error occurred: {ex.Message}");
 //            }

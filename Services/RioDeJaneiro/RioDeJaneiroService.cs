@@ -56,7 +56,7 @@ namespace ApiDiariosOficiais.Services.RioDeJaneiro
 
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -82,7 +82,7 @@ namespace ApiDiariosOficiais.Services.RioDeJaneiro
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

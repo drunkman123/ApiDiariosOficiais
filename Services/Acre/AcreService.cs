@@ -50,7 +50,7 @@ namespace ApiDiariosOficiais.Services.Acre
 
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -89,7 +89,7 @@ namespace ApiDiariosOficiais.Services.Acre
                 }
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

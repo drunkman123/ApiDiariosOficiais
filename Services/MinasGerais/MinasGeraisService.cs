@@ -50,7 +50,7 @@ namespace ApiDiariosOficiais.Services.MinasGerais
                 }
                 result.Resultados = result.Resultados.OrderByDescending(x => x.Date).ToList();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -90,7 +90,7 @@ namespace ApiDiariosOficiais.Services.MinasGerais
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

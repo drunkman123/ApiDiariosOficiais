@@ -64,7 +64,7 @@ namespace ApiDiariosOficiais.Services.RioGrandeDoSul
 
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -90,7 +90,7 @@ namespace ApiDiariosOficiais.Services.RioGrandeDoSul
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

@@ -52,7 +52,7 @@ namespace ApiDiariosOficiais.Services.Alagoas
                                     .OrderByDescending(r => r.Date)
                                     .ToList();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -77,7 +77,7 @@ namespace ApiDiariosOficiais.Services.Alagoas
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

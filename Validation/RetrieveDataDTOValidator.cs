@@ -43,6 +43,9 @@ namespace ApiDiariosOficiais.Validation
 
             RuleFor(x => x.GetMinasGerais)
                 .NotNull().WithMessage("GetMinasGerais é obrigatório.");
+            
+            RuleFor(x => x.GetMatoGrossoDoSul)
+                .NotNull().WithMessage("GetMatoGrossoDoSul é obrigatório.");
 
             RuleFor(x => x.InitialPage)
                 .NotNull().WithMessage("InitialPage é obrigatório.");

@@ -57,7 +57,7 @@ namespace ApiDiariosOficiais.Services.Alagoas
 
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -85,7 +85,7 @@ namespace ApiDiariosOficiais.Services.Alagoas
                     PropertyNameCaseInsensitive = true
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
