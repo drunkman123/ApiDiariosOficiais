@@ -46,6 +46,9 @@ namespace ApiDiariosOficiais.Validation
             
             RuleFor(x => x.GetMatoGrossoDoSul)
                 .NotNull().WithMessage("GetMatoGrossoDoSul é obrigatório.");
+            
+            RuleFor(x => x.GetCeara)
+                .NotNull().WithMessage("GetCeara é obrigatório.");
 
             RuleFor(x => x.InitialPage)
                 .NotNull().WithMessage("InitialPage é obrigatório.");

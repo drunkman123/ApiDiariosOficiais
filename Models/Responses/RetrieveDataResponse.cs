@@ -10,5 +10,6 @@
         public DiarioResponse RioGrandeDoSul { get; set; }
         public DiarioResponse MinasGerais { get; set; }
         public DiarioResponse MatoGrossoDoSul { get; set; }
+        public DiarioResponse Ceara { get; set; }
     }
 }

@@ -37,6 +37,7 @@ namespace ApiDiariosOficiais.Controllers
         { "RioGrandeDoSul", async () => results["RioGrandeDoSul"] = await GetRegionResponseAsync<IRioGrandeDoSulService>(request) },
         { "MinasGerais", async () => results["MinasGerais"] = await GetRegionResponseAsync<IMinasGeraisService>(request) },
         { "MatoGrossoDoSul", async () => results["MatoGrossoDoSul"] = await GetRegionResponseAsync<IMatoGrossoDoSulService>(request) },
+        { "Ceara", async () => results["Ceara"] = await GetRegionResponseAsync<ICearaService>(request) },
         // Add new regions here
     };
 
@@ -49,7 +50,7 @@ namespace ApiDiariosOficiais.Controllers
             await Task.WhenAll(tasks);
 
             // Prepare the final response dynamically
-            return CreateDiarioResponse(results, "Acre", "Alagoas", "SaoPaulo","RioDeJaneiro","Amapa","RioGrandeDoSul","MinasGerais","MatoGrossoDoSul");
+            return CreateDiarioResponse(results, "Acre", "Alagoas", "SaoPaulo","RioDeJaneiro","Amapa","RioGrandeDoSul","MinasGerais","MatoGrossoDoSul","Ceara");
 
         }
 
@@ -107,6 +108,9 @@ namespace ApiDiariosOficiais.Controllers
                         break;
                     case "MatoGrossoDoSul":
                         response.MatoGrossoDoSul = regionResponse;
+                        break;
+                    case "Ceara":
+                        response.Ceara = regionResponse;
                         break;
                     // Add more cases for new regions here
                     default:

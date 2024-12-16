@@ -13,6 +13,7 @@
         public bool GetRioGrandeDoSul { get; init; }
         public bool GetMinasGerais { get; init; }
         public bool GetMatoGrossoDoSul { get; init; }
+        public bool GetCeara { get; init; }
         public bool InitialPage {  get; init; }
         public int Page {  get; init; }
     }
