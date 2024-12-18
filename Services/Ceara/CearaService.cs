@@ -4,7 +4,6 @@ using ApiDiariosOficiais.Mappings;
 using ApiDiariosOficiais.Models;
 using ApiDiariosOficiais.Models.Requests.Ceara;
 using HtmlAgilityPack;
-using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 namespace ApiDiariosOficiais.Services.Ceara
@@ -21,7 +20,11 @@ namespace ApiDiariosOficiais.Services.Ceara
 
         public async Task<DiarioResponse> GetResponseAsync(RetrieveDataDTO requestInicial)
         {
-            var acreRequestInicial = requestInicial.ToApiCearaRequestInicialDomain();
+            var cearaRequestInicial = requestInicial.ToApiCearaRequestInicialDomain();
+
+            var results = new List<string>();
+
+            var cookie = string.Empty;
 
             var result = new DiarioResponse
             {
@@ -30,12 +33,15 @@ namespace ApiDiariosOficiais.Services.Ceara
 
             try
             {
-                var pageContent = await SubmitSearchFormAsync(cearaRequestInicial);
+                cookie = await SubmitSearchAsync(cearaRequestInicial, results);
+                var pages = ExtractPages(results[0]);
+
+                //await SubmitNextPagesSearchAsync(cearaRequestInicial,results);
 
 
-                if (!string.IsNullOrEmpty(pageContent))
+                if (results.Count < 2)
                 {
-                    var document = ParseHtml(pageContent);
+                    var document = ParseHtml(results[0]);
 
                     //RemoveCalendarioDiv(document); //se nao remover a extração dos links buga
 
@@ -59,28 +65,59 @@ namespace ApiDiariosOficiais.Services.Ceara
             return result;
         }
 
-        private async Task<string> SubmitSearchFormAsync(ApiCearaRequestInicial requestInicial)
+        private async Task<string> SubmitSearchAsync(ApiCearaRequestInicial requestInicial, List<string> resultados)
         {
-            var responseBody = string.Empty;
-            var client = _httpClientFactory.CreateClient("ApiAcre");
-            var formData = new Dictionary<string, string>
-                            {
-                                { "paginaIni", requestInicial.PaginaIni },  // Set the updated paginaIni value
-                                { "palavraTipo", "" },
-                                { "ano_palavra", requestInicial.AnoPalavra },
-                                { "palavra", requestInicial.Palavra }
-                            };
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
-            var content = new FormUrlEncodedContent(formData);
+            //var client = new HttpClient();
+            client = _httpClientFactory.CreateClient("ApiCeara");
+
+            string cookie = string.Empty;
             try
             {
+                string dataIni = requestInicial.DataIni.Replace("/", "%2F");
+                string dataFim = requestInicial.DataFim.Replace("/", "%2F");
+                string pesqEx = requestInicial.PesqEx.Contains(' ') ? requestInicial.PesqEx : requestInicial.PesqEx + ' ';
                 // Send the POST request
-                HttpResponseMessage response = await client.PostAsync(string.Empty, content);
+                HttpResponseMessage response = await client.GetAsync(($@"doepesquisa/sead.to?page=pesquisaTextual&action=PesquisarTextual&cmd=11&flag=1&dataini={dataIni}&datafim={dataFim}&numDiario=&numCaderno=&numPagina=&RadioGroup1=radio3&pesqEx={pesqEx}&consultar="));
 
                 if (response.IsSuccessStatusCode)
                 {
                     // Handle success
-                    responseBody = await response.Content.ReadAsStringAsync();
+                    resultados.Add(await response.Content.ReadAsStringAsync());
+                    //cookie = response.Headers.GetValues("Set-Cookie").ToList()[0].Replace("; Path=/doepesquisa", "");
+
+                }
+                else
+                {
+                    // Handle failure
+                    Console.WriteLine($"Error: {response.StatusCode}");
+                }
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            return cookie;
+        }
+        /*private async Task SubmitNextPagesSearchAsync(ApiCearaRequestInicial requestInicial, List<string> resultados)
+        {
+            var client = _httpClientFactory.CreateClient("ApiCeara");
+
+            try
+            {
+                string dataIni = requestInicial.DataIni.Replace("/", "%2F");
+                string dataFim = requestInicial.DataFim.Replace("/", "%2F");
+                string pesqEx = requestInicial.PesqEx.Contains(' ') ? requestInicial.PesqEx : requestInicial.PesqEx + ' ';
+
+                // Send the POST request
+                HttpResponseMessage response = await client.GetAsync($@"doepesquisa/sead.to?page=pesquisaTextual&action=PesquisarTextual&cmd=11&flag=1&dataini={dataIni}&datafim={dataFim}&numDiario=&numCaderno=&numPagina=&RadioGroup1=radio3&pesqEx={pesqEx}&consultar=");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Handle success
+                    resultados.Add(Sanitize(await response.Content.ReadAsStringAsync()));
+                    resultados.Add(response.Headers.GetValues("Set-Cookie").ToList()[0].Replace("; Path=/doepesquisa", ""));
+
                 }
                 else
                 {
@@ -95,6 +132,20 @@ namespace ApiDiariosOficiais.Services.Ceara
             }
             return responseBody;
 
+        }*/
+
+        private string Sanitize(string response)
+        {
+            string sanitizedString = Regex.Replace(response, "<.*?>", string.Empty);
+
+            // Step 2: Decode escape sequences (e.g., <\\/em> -> </em>)
+            sanitizedString = sanitizedString.Replace("\\/", "/");
+
+            // Step 3: Remove unwanted characters (like \n)
+            sanitizedString = sanitizedString.Replace("\n", " ").Replace("\r", " ");
+
+            // Step 4: Normalize spaces (trim and collapse multiple spaces)
+            return Regex.Replace(sanitizedString, @"\s+", " ").Trim();
         }
 
         private HtmlDocument ParseHtml(string htmlContent)
@@ -122,6 +173,27 @@ namespace ApiDiariosOficiais.Services.Ceara
             {
                 Console.WriteLine("No <a> tags found inside <tbody>.");
             }
+        }
+
+        private int ExtractPages(string firstResponse)
+        {
+            var doc = new HtmlDocument();
+            doc.LoadHtml(firstResponse);
+            var pages = 0;
+            // Find the specific <div> containing the text
+            var resultDiv = doc.DocumentNode.SelectSingleNode("//div[@align='center' and contains(text(), 'registros')]");
+
+            if (resultDiv != null)
+            {
+                // Extract the text content
+                string resultText = resultDiv.InnerText.Trim();
+                pages = int.Parse(resultText);
+            }
+            else
+            {
+                Console.WriteLine("Div not found.");
+            }
+            return pages;
         }
 
         private void ExtractTextFromTd(HtmlDocument document, DiarioResponse result)
