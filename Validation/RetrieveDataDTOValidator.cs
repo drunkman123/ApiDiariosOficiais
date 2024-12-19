@@ -10,7 +10,7 @@ namespace ApiDiariosOficiais.Validation
             RuleFor(x => x.TextToSearch)
             .NotEmpty().WithMessage("TextToSearch é obrigatório.")
             .NotNull().WithMessage("TextToSearch não pode ser nulo.")
-            .Matches(@"^[a-zA-Z0-9\s/.\-]*$").WithMessage("TextToSearch só pode conter letras, números, espaço, /, - e .")
+    .Matches(@"^[a-zA-Z0-9\s/\.\-áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ]*$").WithMessage("TextToSearch só pode conter letras, números, espaço, /, - e .")
             .MaximumLength(50).WithMessage("TextToSearch deve conter no máximo 50 caracteres.");
 
             RuleFor(x => x.InitialDate)
@@ -21,7 +21,9 @@ namespace ApiDiariosOficiais.Validation
             RuleFor(x => x.EndDate)
                 .NotEmpty().WithMessage("EndDate é obrigatório.")
                 .NotNull().WithMessage("EndDate não pode ser nulo.")
-                .GreaterThan(x => x.InitialDate).WithMessage("EndDate deve ser maior que InitialDate.");
+                .GreaterThan(x => x.InitialDate).WithMessage("EndDate deve ser maior que InitialDate.")
+                .Must((model, endDate) => (endDate - model.InitialDate).TotalDays <= 15)
+                .WithMessage("O período entre InitialDate e EndDate não pode ser superior a 15 dias.");
 
             RuleFor(x => x.GetAcre)
                 .NotNull().WithMessage("GetAcre é obrigatório.");

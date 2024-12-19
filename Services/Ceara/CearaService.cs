@@ -4,25 +4,29 @@ using ApiDiariosOficiais.Mappings;
 using ApiDiariosOficiais.Models;
 using ApiDiariosOficiais.Models.Requests.Ceara;
 using HtmlAgilityPack;
+using Polly.Timeout;
+using Polly;
+using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace ApiDiariosOficiais.Services.Ceara
 {
     public class CearaService : ICearaService
     {
 
-        private readonly IHttpClientFactory _httpClientFactory;
+        //private readonly IHttpClientFactory _httpClientFactory;
 
-        public CearaService(IHttpClientFactory httpClientFactory)
+        public CearaService(/*IHttpClientFactory httpClientFactory*/)
         {
-            _httpClientFactory = httpClientFactory;
+            //_httpClientFactory = httpClientFactory;
         }
 
         public async Task<DiarioResponse> GetResponseAsync(RetrieveDataDTO requestInicial)
         {
             var cearaRequestInicial = requestInicial.ToApiCearaRequestInicialDomain();
 
-            var results = new List<string>();
+            var responseRequests = new List<string>();
 
             var cookie = string.Empty;
 
@@ -33,28 +37,39 @@ namespace ApiDiariosOficiais.Services.Ceara
 
             try
             {
-                cookie = await SubmitSearchAsync(cearaRequestInicial, results);
-                var pages = ExtractPages(results[0]);
-
-                //await SubmitNextPagesSearchAsync(cearaRequestInicial,results);
-
-
-                if (results.Count < 2)
+                var policy = Policy
+    .Handle<TimeoutRejectedException>() // Handle Timeout exception
+    .Or<TaskCanceledException>() // Also handle TaskCanceledException due to timeout
+    .RetryAsync(2);
+                using (var client = new HttpClient())
                 {
-                    var document = ParseHtml(results[0]);
-
-                    //RemoveCalendarioDiv(document); //se nao remover a extração dos links buga
-
-                    ExtractLinks(document, result);
-                    if (result.Resultados.Count > 0)
+                    client.Timeout = TimeSpan.FromSeconds(10);
+                    cookie = await policy.ExecuteAsync(() => SubmitSearchAsync(cearaRequestInicial, responseRequests, client));
+                    if (responseRequests[0].Contains("Registros não encontrados!"))
                     {
-
-                        ExtractTextFromTd(document, result);
-                        ExtractLastPageNumber(document, result);
-                        ExtractDates(document, result);
+                        result.Success = true;
+                        return result;
                     }
-
+                    var pages = ExtractPages(responseRequests[0]);
+                    for (var i = 1; i < pages; i++)
+                    {
+                        await SubmitNextPagesSearchAsync(responseRequests, client, cookie);
+                    }
                 }
+                Dictionary<string, DateTime> teste = new Dictionary<string, DateTime>();
+                foreach (var item in responseRequests)
+                {
+                    var document = ParseHtml(item);
+                    ExtractDatesAndLinks(document, teste);
+                }
+                foreach(var item in teste)
+                {
+                    result.Resultados.Add(new Resultado { Date = item.Value,Link = item.Key });
+                    
+                }
+                result.Resultados = result.Resultados.OrderByDescending(x => x.Date).ToList();
+
+
             }
             catch (Exception)
             {
@@ -65,25 +80,24 @@ namespace ApiDiariosOficiais.Services.Ceara
             return result;
         }
 
-        private async Task<string> SubmitSearchAsync(ApiCearaRequestInicial requestInicial, List<string> resultados)
+        private async Task<string> SubmitSearchAsync(ApiCearaRequestInicial requestInicial, List<string> resultados, HttpClient client)
         {
-            //var client = new HttpClient();
-            client = _httpClientFactory.CreateClient("ApiCeara");
-
             string cookie = string.Empty;
+
+
             try
             {
                 string dataIni = requestInicial.DataIni.Replace("/", "%2F");
                 string dataFim = requestInicial.DataFim.Replace("/", "%2F");
                 string pesqEx = requestInicial.PesqEx.Contains(' ') ? requestInicial.PesqEx : requestInicial.PesqEx + ' ';
                 // Send the POST request
-                HttpResponseMessage response = await client.GetAsync(($@"doepesquisa/sead.to?page=pesquisaTextual&action=PesquisarTextual&cmd=11&flag=1&dataini={dataIni}&datafim={dataFim}&numDiario=&numCaderno=&numPagina=&RadioGroup1=radio3&pesqEx={pesqEx}&consultar="));
+                HttpResponseMessage response = await client.GetAsync(($@"http://pesquisa.doe.seplag.ce.gov.br/doepesquisa/sead.to?page=pesquisaTextual&action=PesquisarTextual&cmd=11&flag=1&dataini={dataIni}&datafim={dataFim}&numDiario=&numCaderno=&numPagina=&RadioGroup1=radio3&pesqEx={pesqEx}&consultar="));
 
                 if (response.IsSuccessStatusCode)
                 {
                     // Handle success
                     resultados.Add(await response.Content.ReadAsStringAsync());
-                    //cookie = response.Headers.GetValues("Set-Cookie").ToList()[0].Replace("; Path=/doepesquisa", "");
+                    cookie = response.Headers.GetValues("Set-Cookie").ToList()[0].Replace("; Path=/doepesquisa", "");
 
                 }
                 else
@@ -97,27 +111,25 @@ namespace ApiDiariosOficiais.Services.Ceara
             {
                 throw;
             }
-            return cookie;
-        }
-        /*private async Task SubmitNextPagesSearchAsync(ApiCearaRequestInicial requestInicial, List<string> resultados)
-        {
-            var client = _httpClientFactory.CreateClient("ApiCeara");
 
+            return cookie;
+
+
+        }
+        private async Task SubmitNextPagesSearchAsync(List<string> resultados, HttpClient client, string cookie)
+        {
             try
             {
-                string dataIni = requestInicial.DataIni.Replace("/", "%2F");
-                string dataFim = requestInicial.DataFim.Replace("/", "%2F");
-                string pesqEx = requestInicial.PesqEx.Contains(' ') ? requestInicial.PesqEx : requestInicial.PesqEx + ' ';
-
+                client.DefaultRequestHeaders.Clear();
+                client.DefaultRequestHeaders.Add("Cookie", cookie);
+                /*client.DefaultRequestHeaders.Add("Connection", "close");*/
                 // Send the POST request
-                HttpResponseMessage response = await client.GetAsync($@"doepesquisa/sead.to?page=pesquisaTextual&action=PesquisarTextual&cmd=11&flag=1&dataini={dataIni}&datafim={dataFim}&numDiario=&numCaderno=&numPagina=&RadioGroup1=radio3&pesqEx={pesqEx}&consultar=");
+                HttpResponseMessage response = await client.GetAsync($@"http://pesquisa.doe.seplag.ce.gov.br/doepesquisa/sead.do?page=pesquisaTextual&cmd=proximo&action=NavegarBasico&flag=1");
 
                 if (response.IsSuccessStatusCode)
                 {
                     // Handle success
-                    resultados.Add(Sanitize(await response.Content.ReadAsStringAsync()));
-                    resultados.Add(response.Headers.GetValues("Set-Cookie").ToList()[0].Replace("; Path=/doepesquisa", ""));
-
+                    resultados.Add(await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
@@ -130,24 +142,7 @@ namespace ApiDiariosOficiais.Services.Ceara
             {
                 throw;
             }
-            return responseBody;
-
-        }*/
-
-        private string Sanitize(string response)
-        {
-            string sanitizedString = Regex.Replace(response, "<.*?>", string.Empty);
-
-            // Step 2: Decode escape sequences (e.g., <\\/em> -> </em>)
-            sanitizedString = sanitizedString.Replace("\\/", "/");
-
-            // Step 3: Remove unwanted characters (like \n)
-            sanitizedString = sanitizedString.Replace("\n", " ").Replace("\r", " ");
-
-            // Step 4: Normalize spaces (trim and collapse multiple spaces)
-            return Regex.Replace(sanitizedString, @"\s+", " ").Trim();
         }
-
         private HtmlDocument ParseHtml(string htmlContent)
         {
             var document = new HtmlDocument();
@@ -155,23 +150,21 @@ namespace ApiDiariosOficiais.Services.Ceara
             return document;
         }
 
-        private void ExtractLinks(HtmlDocument document, DiarioResponse result)
+        private void ExtractDatesAndLinks(HtmlDocument document, Dictionary<string, DateTime> teste)
         {
-            var links = document.DocumentNode.SelectNodes("//tbody//a");
+            var nodes = document.DocumentNode.SelectNodes("//td[@bgcolor='#FFFFFF' and not(contains(., 'Último Diário publicado')) and not(.//img[contains(@src, 'images/Duvida.jpg')])]//a");
+            /*var nodes = document.DocumentNode.SelectNodes(
+    "//td[@bgcolor='#FFFFFF' and not(contains(., 'Último Diário publicado')) and not(.//img[contains(@src, 'images/Duvida.jpg')])]//a");*/
 
-            if (links != null)
+            if (nodes != null)
             {
-                foreach (var link in links)
+                foreach (var node in nodes)
                 {
-                    result.Resultados.Add(new Resultado
-                    {
-                        Link = link.GetAttributeValue("href", string.Empty)
-                    });
+                    // Extract the date text
+                    string dateText = node.InnerText.Trim();
+                    string link = ExtractUrl(node.OuterHtml.Trim());
+                    teste.Add(link, DateTime.ParseExact(dateText, "dd-MM-yyyy", CultureInfo.InvariantCulture));
                 }
-            }
-            else
-            {
-                Console.WriteLine("No <a> tags found inside <tbody>.");
             }
         }
 
@@ -187,7 +180,7 @@ namespace ApiDiariosOficiais.Services.Ceara
             {
                 // Extract the text content
                 string resultText = resultDiv.InnerText.Trim();
-                pages = int.Parse(resultText);
+                pages = (int)Math.Ceiling(int.Parse(resultText.Split(' ')[0]) / 8.0);
             }
             else
             {
@@ -206,41 +199,13 @@ namespace ApiDiariosOficiais.Services.Ceara
             }
 
         }
-
-        private void ExtractLastPageNumber(HtmlDocument document, DiarioResponse result)
+        private string ExtractUrl(string input)
         {
-            var node = document.DocumentNode
-                                      .SelectSingleNode("//div[@class='resultados_busca']/p[2]");
+            // Regular expression to extract the href URL
+            var match = Regex.Match(input, @"<a\s+href\s*=\s*[""'](https?://.*?)(?=[""'])", RegexOptions.IgnoreCase);
 
-            string text = node.InnerText;
-            var number = new string(text.Where(char.IsDigit).ToArray());
-            if (number.Length > 0)
-            {
-                result.Pages = (int)Math.Ceiling(Convert.ToInt32(number) / 10.0);
-            }
-
-        }
-
-        private void ExtractDates(HtmlDocument document, DiarioResponse result)
-        {
-            var datePattern = @"\b\d{2}/\d{2}/\d{4}\b";
-            var regex = new Regex(datePattern);
-            var dates = document.DocumentNode.SelectNodes("//td")
-                       .Select(node => node.InnerText.Trim())
-                       .Where(text => regex.IsMatch(text)) // Match only valid date formats
-                       .Select(text => regex.Match(text).Value).ToList(); // Extract the date
-
-            for (int i = 0; i < result.Resultados.Count; i++)
-            {
-                // Parse the string into a DateTime object with the specific format
-                DateTime date = DateTime.ParseExact(dates[i], "dd/MM/yyyy", null);
-
-                // Format the DateTime object as "yyyy-MM-dd"
-                string formattedDate = date.ToString("yyyy-MM-dd");
-
-                result.Resultados[i].Date = Convert.ToDateTime(formattedDate);
-            }
-
+            // Return the URL if a match is found, otherwise return an empty string
+            return match.Success ? match.Groups[1].Value : string.Empty;
         }
     }
 }
